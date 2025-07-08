@@ -1,4 +1,5 @@
-import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { NodeManagement } from "@/components/nodes/node-management";
 
 export default function NodesPage() {
   return (
@@ -10,9 +11,7 @@ export default function NodesPage() {
             Manage the physical nodes that your servers run on.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-            <p>Node management functionality will be available here.</p>
-        </CardContent>
+        <NodeManagement />
       </Card>
     </div>
   );
