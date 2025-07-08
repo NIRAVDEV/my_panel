@@ -24,6 +24,7 @@ import {
   Gamepad2,
   LayoutGrid,
   LogOut,
+  Users,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { cn } from "@/lib/utils";
@@ -70,6 +71,17 @@ export default function DashboardLayout({
                 >
                   <Bot />
                   AI Game Assistant
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link href="/dashboard/users">
+                <SidebarMenuButton
+                  isActive={isActive("/dashboard/users")}
+                  className="font-medium"
+                >
+                  <Users />
+                  User Management
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
