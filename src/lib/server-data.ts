@@ -10,7 +10,7 @@ export type Server = {
   version: string;
   ram: number; // in GB
   storage: number; // in GB
-  type: "Vanilla" | "Paper" | "Spigot" | "Purpur";
+  type: "Vanilla" | "Paper" | "Spigot" | "Purpur" | "Forge" | "Fabric" | "BungeeCord";
 };
 
 export const initialServers: Server[] = [

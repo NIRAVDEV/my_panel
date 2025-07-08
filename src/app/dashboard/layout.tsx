@@ -25,6 +25,7 @@ import {
   LayoutGrid,
   LogOut,
   Server,
+  ServerCog,
   Users,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
@@ -96,18 +97,32 @@ export default function DashboardLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             {user.role === 'Admin' && (
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive("/dashboard/users")}
-                  className="font-medium"
-                >
-                  <Link href="/dashboard/users">
-                    <Users />
-                    User Management
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive("/dashboard/users")}
+                    className="font-medium"
+                  >
+                    <Link href="/dashboard/users">
+                      <Users />
+                      User Management
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive("/dashboard/nodes")}
+                    className="font-medium"
+                  >
+                    <Link href="/dashboard/nodes">
+                      <ServerCog />
+                      Node Management
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </>
             )}
           </SidebarMenu>
         </SidebarContent>

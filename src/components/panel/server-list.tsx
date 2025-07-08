@@ -168,6 +168,9 @@ export function ServerList() {
                           <SelectItem value="Paper">Paper</SelectItem>
                           <SelectItem value="Spigot">Spigot</SelectItem>
                           <SelectItem value="Purpur">Purpur</SelectItem>
+                          <SelectItem value="Forge">Forge</SelectItem>
+                          <SelectItem value="Fabric">Fabric</SelectItem>
+                          <SelectItem value="BungeeCord">BungeeCord</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
