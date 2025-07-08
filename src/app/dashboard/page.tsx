@@ -1,7 +1,10 @@
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { ResourceCharts } from "@/components/dashboard/resource-charts";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
-import { HardDrive, Cpu, Users, Clock } from "lucide-react";
+import { HardDrive, Cpu, Users, Clock, ArrowRight, PlusCircle } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
   return (
@@ -34,8 +37,26 @@ export default function DashboardPage() {
         />
       </div>
       <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 flex flex-col gap-8">
           <ResourceCharts />
+          <Card>
+            <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Get to where you need to go, faster.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col sm:flex-row gap-4">
+                <Button asChild className="w-full sm:w-auto">
+                    <Link href="/dashboard/panel">
+                        Go to Control Panel <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full sm:w-auto">
+                    <Link href="/dashboard/panel">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Create New Server
+                    </Link>
+                </Button>
+            </CardContent>
+          </Card>
         </div>
         <div className="lg:col-span-1">
           <ActivityFeed />

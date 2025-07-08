@@ -24,6 +24,7 @@ import {
   Gamepad2,
   LayoutGrid,
   LogOut,
+  Server,
   Users,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
@@ -36,7 +37,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname.startsWith(path);
 
   return (
     <SidebarProvider>
@@ -55,11 +56,22 @@ export default function DashboardLayout({
             <SidebarMenuItem>
               <Link href="/dashboard">
                 <SidebarMenuButton
-                  isActive={isActive("/dashboard")}
+                  isActive={pathname === "/dashboard"}
                   className="font-medium"
                 >
                   <LayoutGrid />
                   Dashboard
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link href="/dashboard/panel">
+                <SidebarMenuButton
+                  isActive={isActive("/dashboard/panel")}
+                  className="font-medium"
+                >
+                  <Server />
+                  Control Panel
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
