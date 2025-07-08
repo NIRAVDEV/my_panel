@@ -38,7 +38,7 @@ export function LoginForm() {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required defaultValue="password" />
+            <Input id="password" type="password" required defaultValue="admin123" />
           </div>
           <Button type="submit" className="w-full mt-2 bg-primary hover:bg-primary/90">
             Sign In
