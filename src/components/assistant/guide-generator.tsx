@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { getAIGuide } from "@/lib/actions";
 import { CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { List, Sparkles, Terminal } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 
-const initialState = {
+const initialState: { steps?: string[]; error?: string } = {
   steps: undefined,
   error: undefined,
 };
@@ -31,34 +32,31 @@ function SubmitButton() {
   );
 }
 
-export function GuideGenerator() {
-  const [state, formAction] = useFormState(getAIGuide, initialState);
+function FormContent({ state }: { state: typeof initialState }) {
   const { pending } = useFormStatus();
 
   return (
-    <CardContent>
-      <form action={formAction} className="space-y-4">
-        <Textarea
-          name="task"
-          placeholder="e.g., How do I build a simple house? or How to craft a Nether portal?"
-          className="min-h-[100px]"
-          required
-        />
-        <div className="flex justify-end">
-            <SubmitButton />
-        </div>
-      </form>
+    <>
+      <Textarea
+        name="task"
+        placeholder="e.g., How do I build a simple house? or How to craft a Nether portal?"
+        className="min-h-[100px]"
+        required
+      />
+      <div className="flex justify-end">
+        <SubmitButton />
+      </div>
 
       <div className="mt-6">
         {pending && (
-           <div className="space-y-4">
+          <div className="space-y-4">
             <Skeleton className="h-6 w-1/3" />
             <div className="space-y-2">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-3/4" />
             </div>
-           </div>
+          </div>
         )}
 
         {state.error && (
@@ -69,11 +67,11 @@ export function GuideGenerator() {
           </Alert>
         )}
 
-        {state.steps && (
+        {state.steps && !pending && (
           <div className="prose prose-sm max-w-none rounded-lg border p-4">
             <h3 className="flex items-center gap-2 font-semibold">
-                <List className="h-5 w-5 text-primary" />
-                Your Step-by-Step Guide
+              <List className="h-5 w-5 text-primary" />
+              Your Step-by-Step Guide
             </h3>
             <ol className="list-decimal pl-5 space-y-2">
               {state.steps.map((step, index) => (
@@ -83,6 +81,18 @@ export function GuideGenerator() {
           </div>
         )}
       </div>
+    </>
+  );
+}
+
+export function GuideGenerator() {
+  const [state, formAction] = useActionState(getAIGuide, initialState);
+
+  return (
+    <CardContent>
+      <form action={formAction} className="space-y-4">
+        <FormContent state={state} />
+      </form>
     </CardContent>
   );
 }
