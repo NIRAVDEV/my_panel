@@ -2,7 +2,7 @@
 import { initialServers } from "@/lib/server-data";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge as BadgeComponent, Cpu, HardDrive, Users } from "lucide-react";
+import { Cpu, HardDrive, Users } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { ResourceCharts } from "@/components/dashboard/resource-charts";
 import { Badge } from "@/components/ui/badge";
@@ -39,27 +39,22 @@ export default function ServerOverviewPage({ params }: { params: { id: string } 
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-            <ResourceCharts />
-        </div>
-        <div className="lg:col-span-1">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Server Console</CardTitle>
-                    <CardDescription>Live output from your server.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="bg-muted aspect-video rounded-md p-4 text-sm font-mono text-muted-foreground overflow-auto">
-                        <p>[INFO] Server is starting...</p>
-                        <p>[INFO] Loading plugins...</p>
-                        <p>[INFO] WorldEdit loaded.</p>
-                        <p>[INFO] Done! For help, type "help".</p>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-      </div>
+      <Card>
+          <CardHeader>
+              <CardTitle>Server Console</CardTitle>
+              <CardDescription>Live output from your server.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <div className="bg-muted aspect-video rounded-md p-4 text-sm font-mono text-muted-foreground overflow-auto">
+                  <p>[INFO] Server is starting...</p>
+                  <p>[INFO] Loading plugins...</p>
+                  <p>[INFO] WorldEdit loaded.</p>
+                  <p>[INFO] Done! For help, type "help".</p>
+              </div>
+          </CardContent>
+      </Card>
+
+      <ResourceCharts />
     </>
   );
 }
