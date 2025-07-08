@@ -1,6 +1,8 @@
+
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -24,69 +26,63 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoreHorizontal, Play, PlusCircle, RefreshCw, Square } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MoreHorizontal, Play, PlusCircle, RefreshCw, SlidersHorizontal, Square } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import type { Server } from "@/lib/server-data";
+import { initialServers } from "@/lib/server-data";
 
-type Server = {
-  id: string;
-  name: string;
-  status: "Online" | "Offline" | "Starting";
-  players: {
-    current: number;
-    max: number;
-  };
-  version: string;
+const defaultNewServer: Omit<Server, "id" | "status" | "players"> & {ram: string, storage: string} = {
+    name: "",
+    ram: "4",
+    storage: "10",
+    version: "1.21",
+    type: "Paper",
 };
-
-const initialServers: Server[] = [
-  {
-    id: "survival-1",
-    name: "Survival Paradise",
-    status: "Online",
-    players: { current: 12, max: 100 },
-    version: "1.21",
-  },
-  {
-    id: "creative-build",
-    name: "Creative World",
-    status: "Offline",
-    players: { current: 0, max: 50 },
-    version: "1.20.4",
-  },
-  {
-    id: "minigames",
-    name: "Mini-Games Fun",
-    status: "Starting",
-    players: { current: 0, max: 200 },
-    version: "1.21",
-  },
-];
 
 export function ServerList() {
   const [servers, setServers] = useState<Server[]>(initialServers);
   const [open, setOpen] = useState(false);
-  const [newServerName, setNewServerName] = useState("");
+  const [newServerDetails, setNewServerDetails] = useState(defaultNewServer);
   const { toast } = useToast();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setNewServerDetails(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSelectChange = (id: 'ram' | 'version' | 'type') => (value: string) => {
+    setNewServerDetails(prev => ({...prev, [id]: value}));
+  }
 
   const handleCreateServer = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newServerName) return;
+    if (!newServerDetails.name) return;
 
     const newServer: Server = {
-        id: newServerName.toLowerCase().replace(/\s+/g, '-'),
-        name: newServerName,
+        id: newServerDetails.name.toLowerCase().replace(/\s+/g, '-'),
+        name: newServerDetails.name,
         status: "Offline",
-        players: { current: 0, max: 20 },
-        version: "1.21",
+        players: { current: 0, max: 100 },
+        version: newServerDetails.version,
+        ram: parseInt(newServerDetails.ram, 10),
+        storage: parseInt(newServerDetails.storage, 10),
+        type: newServerDetails.type as Server["type"],
     };
     
     setServers(prev => [...prev, newServer]);
     setOpen(false);
-    setNewServerName("");
+    setNewServerDetails(defaultNewServer);
     toast({
         title: "Server Created",
-        description: `Your new server "${newServerName}" has been created.`,
+        description: `Your new server "${newServer.name}" has been created.`,
     })
   };
 
@@ -134,27 +130,61 @@ export function ServerList() {
               Create Server
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-lg">
             <form onSubmit={handleCreateServer}>
                 <DialogHeader>
                   <DialogTitle>Create New Server</DialogTitle>
                   <DialogDescription>
-                      Enter a name for your new Minecraft server.
+                      Configure and create a new Minecraft server.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="name" className="text-right">
-                      Server Name
-                      </Label>
-                      <Input id="name" value={newServerName} onChange={(e) => setNewServerName(e.target.value)} className="col-span-3" placeholder="e.g., My Awesome Server" required />
+                    <Label htmlFor="name" className="text-right">Name</Label>
+                    <Input id="name" value={newServerDetails.name} onChange={handleInputChange} className="col-span-3" placeholder="e.g., My Awesome Server" required />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="ram" className="text-right">RAM</Label>
+                    <Select onValueChange={handleSelectChange('ram')} defaultValue={newServerDetails.ram}>
+                      <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="2">2 GB</SelectItem>
+                          <SelectItem value="4">4 GB</SelectItem>
+                          <SelectItem value="8">8 GB</SelectItem>
+                          <SelectItem value="16">16 GB</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                   <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="storage" className="text-right">Storage (GB)</Label>
+                    <Input id="storage" type="number" value={newServerDetails.storage} onChange={handleInputChange} className="col-span-3" placeholder="e.g., 10" required />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="type" className="text-right">Server Type</Label>
+                     <Select onValueChange={handleSelectChange('type')} defaultValue={newServerDetails.type}>
+                      <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="Vanilla">Vanilla</SelectItem>
+                          <SelectItem value="Paper">Paper</SelectItem>
+                          <SelectItem value="Spigot">Spigot</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                   <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="version" className="text-right">Version</Label>
+                     <Select onValueChange={handleSelectChange('version')} defaultValue={newServerDetails.version}>
+                      <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="1.21">1.21</SelectItem>
+                          <SelectItem value="1.20.4">1.20.4</SelectItem>
+                          <SelectItem value="1.19.2">1.19.2</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button type="button" variant="secondary">
-                            Cancel
-                        </Button>
+                        <Button type="button" variant="secondary">Cancel</Button>
                     </DialogClose>
                     <Button type="submit">Create Server</Button>
                 </DialogFooter>
@@ -178,7 +208,9 @@ export function ServerList() {
               <TableRow key={server.id}>
                 <TableCell>
                   <div className="font-medium">{server.name}</div>
-                  <div className="text-sm text-muted-foreground">v{server.version}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {server.ram}GB RAM &bull; {server.type} &bull; v{server.version}
+                  </div>
                 </TableCell>
                 <TableCell>
                   {getStatusBadge(server.status)}
@@ -194,6 +226,13 @@ export function ServerList() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/panel/${server.id}`}>
+                                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                    Manage
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleServerAction(server.id, 'start')} disabled={server.status === 'Online'}>
                                 <Play className="mr-2 h-4 w-4" /> Start
                             </DropdownMenuItem>
@@ -214,3 +253,4 @@ export function ServerList() {
     </CardContent>
   );
 }
+
