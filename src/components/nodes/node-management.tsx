@@ -34,12 +34,13 @@ type Node = {
   fqdn: string;
   memory: number; // in GB
   disk: number; // in GB
+  ports: { start: number; end: number };
   servers: number;
 };
 
 const initialNodes: Node[] = [
-  { id: 'node-1', name: 'US-East-1', location: 'Ashburn, VA', fqdn: 'node1.jexactyl.pro', memory: 64, disk: 500, servers: 3 },
-  { id: 'node-2', name: 'EU-West-1', location: 'Frankfurt, DE', fqdn: 'node2.jexactyl.pro', memory: 128, disk: 1000, servers: 5 },
+  { id: 'node-1', name: 'US-East-1', location: 'Ashburn, VA', fqdn: 'node1.jexactyl.pro', memory: 64, disk: 500, ports: { start: 25565, end: 25575 }, servers: 3 },
+  { id: 'node-2', name: 'EU-West-1', location: 'Frankfurt, DE', fqdn: 'node2.jexactyl.pro', memory: 128, disk: 1000, ports: { start: 25565, end: 25585 }, servers: 5 },
 ];
 
 const defaultNewNode = {
@@ -48,6 +49,8 @@ const defaultNewNode = {
     fqdn: "",
     memory: "32",
     disk: "250",
+    portsStart: "25565",
+    portsEnd: "25575",
 };
 
 export function NodeManagement() {
@@ -72,6 +75,10 @@ export function NodeManagement() {
         fqdn: newNodeDetails.fqdn,
         memory: parseInt(newNodeDetails.memory, 10),
         disk: parseInt(newNodeDetails.disk, 10),
+        ports: {
+            start: parseInt(newNodeDetails.portsStart, 10),
+            end: parseInt(newNodeDetails.portsEnd, 10),
+        },
         servers: 0,
     };
     
@@ -123,6 +130,13 @@ export function NodeManagement() {
                     <Label htmlFor="disk" className="text-right">Disk (GB)</Label>
                     <Input id="disk" type="number" value={newNodeDetails.disk} onChange={handleInputChange} className="col-span-3" placeholder="e.g., 500" required />
                   </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="ports" className="text-right">Port Range</Label>
+                    <div className="col-span-3 grid grid-cols-2 gap-2">
+                        <Input id="portsStart" type="number" value={newNodeDetails.portsStart} onChange={handleInputChange} placeholder="e.g., 25565" required />
+                        <Input id="portsEnd" type="number" value={newNodeDetails.portsEnd} onChange={handleInputChange} placeholder="e.g., 25575" required />
+                    </div>
+                  </div>
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
@@ -142,7 +156,7 @@ export function NodeManagement() {
               <TableHead>Node Name</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Servers</TableHead>
-              <TableHead>Resources</TableHead>
+              <TableHead>Allocation</TableHead>
               <TableHead><span className="sr-only">Actions</span></TableHead>
             </TableRow>
           </TableHeader>
@@ -156,7 +170,8 @@ export function NodeManagement() {
                 <TableCell>{node.location}</TableCell>
                 <TableCell>{node.servers}</TableCell>
                 <TableCell>
-                    {node.memory} GB RAM &bull; {node.disk} GB Disk
+                    <div>{node.memory} GB RAM &bull; {node.disk} GB Disk</div>
+                    <div className="text-sm text-muted-foreground">Ports: {node.ports.start}-{node.ports.end}</div>
                 </TableCell>
                 <TableCell className="text-right">
                     <DropdownMenu>
