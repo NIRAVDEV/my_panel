@@ -208,7 +208,11 @@ export function ServerList() {
             {servers.map((server) => (
               <TableRow key={server.id}>
                 <TableCell>
-                  <div className="font-medium">{server.name}</div>
+                  <div className="font-medium">
+                    <Link href={`/dashboard/panel/${server.id}`} className="hover:underline">
+                      {server.name}
+                    </Link>
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {server.ram}GB RAM &bull; {server.type} &bull; v{server.version}
                   </div>
