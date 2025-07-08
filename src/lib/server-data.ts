@@ -10,7 +10,7 @@ export type Server = {
   version: string;
   ram: number; // in GB
   storage: number; // in GB
-  type: "Vanilla" | "Paper" | "Spigot";
+  type: "Vanilla" | "Paper" | "Spigot" | "Purpur";
 };
 
 export const initialServers: Server[] = [
@@ -42,6 +42,6 @@ export const initialServers: Server[] = [
     version: "1.21",
     ram: 16,
     storage: 50,
-    type: "Spigot",
+    type: "Purpur",
   },
 ];

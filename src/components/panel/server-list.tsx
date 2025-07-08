@@ -167,6 +167,7 @@ export function ServerList() {
                           <SelectItem value="Vanilla">Vanilla</SelectItem>
                           <SelectItem value="Paper">Paper</SelectItem>
                           <SelectItem value="Spigot">Spigot</SelectItem>
+                          <SelectItem value="Purpur">Purpur</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -253,4 +254,3 @@ export function ServerList() {
     </CardContent>
   );
 }
-
