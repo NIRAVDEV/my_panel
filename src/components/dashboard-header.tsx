@@ -49,7 +49,7 @@ export function DashboardHeader() {
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuItem>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <Link href="/" passHref>
+            <Link href="/">
               <DropdownMenuItem>Logout</DropdownMenuItem>
             </Link>
           </DropdownMenuContent>

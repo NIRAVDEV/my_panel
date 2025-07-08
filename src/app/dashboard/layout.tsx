@@ -52,7 +52,7 @@ export default function DashboardLayout({
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/dashboard" legacyBehavior passHref>
+              <Link href="/dashboard">
                 <SidebarMenuButton
                   isActive={isActive("/dashboard")}
                   className="font-medium"
@@ -63,7 +63,7 @@ export default function DashboardLayout({
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/dashboard/assistant" legacyBehavior passHref>
+              <Link href="/dashboard/assistant">
                 <SidebarMenuButton
                   isActive={isActive("/dashboard/assistant")}
                   className="font-medium"
@@ -88,7 +88,7 @@ export default function DashboardLayout({
                 admin@jexactyl.pro
               </p>
             </div>
-            <Link href="/" passHref>
+            <Link href="/">
               <LogOut className="w-5 h-5 text-sidebar-foreground/70 hover:text-sidebar-foreground" />
             </Link>
           </div>
