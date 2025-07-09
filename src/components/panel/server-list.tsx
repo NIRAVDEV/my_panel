@@ -1,8 +1,9 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
+import { useFormState } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -33,80 +34,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MoreHorizontal, Play, PlusCircle, RefreshCw, SlidersHorizontal, Square } from "lucide-react";
+import { MoreHorizontal, Play, PlusCircle, RefreshCw, SlidersHorizontal, Square, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import type { Server } from "@/lib/server-data";
-import { initialServers } from "@/lib/server-data";
+import type { Server } from "@/lib/types";
+import { createServer, updateServerStatus, deleteServer } from "@/lib/actions";
 
-const defaultNewServer: Omit<Server, "id" | "status" | "players"> & {ram: string, storage: string} = {
-    name: "",
-    ram: "4",
-    storage: "10",
-    version: "1.21",
-    type: "Paper",
+const initialState = {
+  errors: {},
+  success: false,
 };
 
-export function ServerList() {
+export function ServerList({ initialServers }: { initialServers: Server[] }) {
   const [servers, setServers] = useState<Server[]>(initialServers);
   const [open, setOpen] = useState(false);
-  const [newServerDetails, setNewServerDetails] = useState(defaultNewServer);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const [formState, formAction] = useFormState(createServer, initialState);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setNewServerDetails(prev => ({ ...prev, [id]: value }));
-  };
+  useEffect(() => {
+    setServers(initialServers);
+  }, [initialServers]);
 
-  const handleSelectChange = (id: 'ram' | 'version' | 'type') => (value: string) => {
-    setNewServerDetails(prev => ({...prev, [id]: value}));
-  }
-
-  const handleCreateServer = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newServerDetails.name) return;
-
-    const newServer: Server = {
-        id: newServerDetails.name.toLowerCase().replace(/\s+/g, '-'),
-        name: newServerDetails.name,
-        status: "Offline",
-        players: { current: 0, max: 100 },
-        version: newServerDetails.version,
-        ram: parseInt(newServerDetails.ram, 10),
-        storage: parseInt(newServerDetails.storage, 10),
-        type: newServerDetails.type as Server["type"],
-    };
-    
-    setServers(prev => [...prev, newServer]);
-    setOpen(false);
-    setNewServerDetails(defaultNewServer);
-    toast({
+  useEffect(() => {
+    if (formState.success) {
+      setOpen(false);
+      toast({
         title: "Server Created",
-        description: `Your new server "${newServer.name}" has been created.`,
-    })
-  };
+        description: `Your new server has been created.`,
+      });
+    }
+  }, [formState, toast]);
 
   const handleServerAction = (serverId: string, action: "start" | "stop" | "restart") => {
-    toast({
+    startTransition(async () => {
+      await updateServerStatus(serverId, action);
+      toast({
         title: "Action Sent",
         description: `The "${action}" command has been sent to server ${serverId}.`,
+      });
     });
-    // In a real app, this would trigger an API call.
-    // We can also update the status for demo purposes
-    if (action === "start") {
-        setServers(servers => servers.map(s => s.id === serverId ? {...s, status: "Starting"} : s));
-        setTimeout(() => {
-            setServers(servers => servers.map(s => s.id === serverId ? {...s, status: "Online"} : s));
-        }, 3000)
-    }
-    if (action === "stop" || action === "restart") {
-        setServers(servers => servers.map(s => s.id === serverId ? {...s, status: "Offline"} : s));
-    }
-    if (action === "restart") {
-        setTimeout(() => {
-            handleServerAction(serverId, 'start');
-        }, 1000);
-    }
+  }
+
+  const handleDelete = (serverId: string) => {
+    startTransition(async () => {
+      await deleteServer(serverId);
+      toast({
+        title: "Server Deleted",
+        description: "The server has been successfully deleted.",
+        variant: "destructive"
+      });
+    });
   }
 
   const getStatusBadge = (status: Server['status']) => {
@@ -131,7 +109,7 @@ export function ServerList() {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
-            <form onSubmit={handleCreateServer}>
+            <form action={formAction}>
                 <DialogHeader>
                   <DialogTitle>Create New Server</DialogTitle>
                   <DialogDescription>
@@ -141,11 +119,11 @@ export function ServerList() {
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="name" className="text-right">Name</Label>
-                    <Input id="name" value={newServerDetails.name} onChange={handleInputChange} className="col-span-3" placeholder="e.g., My Awesome Server" required />
+                    <Input id="name" name="name" className="col-span-3" placeholder="e.g., My Awesome Server" required />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="ram" className="text-right">RAM</Label>
-                    <Select onValueChange={handleSelectChange('ram')} defaultValue={newServerDetails.ram}>
+                    <Select name="ram" defaultValue="4">
                       <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
                       <SelectContent>
                           <SelectItem value="2">2 GB</SelectItem>
@@ -157,11 +135,11 @@ export function ServerList() {
                   </div>
                    <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="storage" className="text-right">Storage (GB)</Label>
-                    <Input id="storage" type="number" value={newServerDetails.storage} onChange={handleInputChange} className="col-span-3" placeholder="e.g., 10" required />
+                    <Input id="storage" name="storage" type="number" defaultValue="10" className="col-span-3" placeholder="e.g., 10" required />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="type" className="text-right">Server Type</Label>
-                     <Select onValueChange={handleSelectChange('type')} defaultValue={newServerDetails.type}>
+                     <Select name="type" defaultValue="Paper">
                       <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
                       <SelectContent>
                           <SelectItem value="Vanilla">Vanilla</SelectItem>
@@ -176,7 +154,7 @@ export function ServerList() {
                   </div>
                    <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="version" className="text-right">Version</Label>
-                     <Select onValueChange={handleSelectChange('version')} defaultValue={newServerDetails.version}>
+                     <Select name="version" defaultValue="1.21">
                       <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
                       <SelectContent>
                           <SelectItem value="1.21">1.21</SelectItem>
@@ -190,7 +168,7 @@ export function ServerList() {
                     <DialogClose asChild>
                         <Button type="button" variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit">Create Server</Button>
+                    <Button type="submit" disabled={isPending}>Create Server</Button>
                 </DialogFooter>
             </form>
           </DialogContent>
@@ -209,7 +187,7 @@ export function ServerList() {
           </TableHeader>
           <TableBody>
             {servers.length > 0 ? servers.map((server) => (
-              <TableRow key={server.id}>
+              <TableRow key={server.id} className={isPending ? 'opacity-50' : ''}>
                 <TableCell>
                   <div className="font-medium">
                     <Link href={`/dashboard/panel/${server.id}`} className="hover:underline">
@@ -249,6 +227,11 @@ export function ServerList() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleServerAction(server.id, 'restart')} disabled={server.status === 'Offline'}>
                                 <RefreshCw className="mr-2 h-4 w-4" /> Restart
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDelete(server.id)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

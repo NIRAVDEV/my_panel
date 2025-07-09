@@ -1,7 +1,11 @@
+
 import { UserManagement } from "@/components/users/user-management";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getUsers } from "@/lib/actions";
 
-export default function UsersPage() {
+export default async function UsersPage() {
+  const initialUsers = await getUsers();
+
   return (
     <div className="max-w-7xl mx-auto">
       <Card>
@@ -11,7 +15,7 @@ export default function UsersPage() {
             Add, edit, or remove users and manage their roles.
           </CardDescription>
         </CardHeader>
-        <UserManagement />
+        <UserManagement initialUsers={initialUsers} />
       </Card>
     </div>
   );

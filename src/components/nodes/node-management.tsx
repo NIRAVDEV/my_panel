@@ -1,6 +1,8 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useFormState } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -23,87 +25,46 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, MoreHorizontal, PlusCircle, RefreshCw } from "lucide-react";
+import { BookOpen, MoreHorizontal, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { getNodeInstallerGuide } from "@/lib/actions";
+import { createNode, getNodeInstallerGuide, updateNodeStatus, deleteNode } from "@/lib/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import type { Node } from "@/lib/types";
+import { useEffect } from "react";
 
-type Node = {
-  id: string;
-  name: string;
-  location: string;
-  fqdn: string;
-  memory: number; // in GB
-  disk: number; // in GB
-  ports: { start: number; end: number };
-  servers: number;
-  os: "debian" | "nixos";
-  status: "Online" | "Offline";
+const initialState = {
+    errors: {},
+    success: false,
 };
 
-const initialNodes: Node[] = [];
-
-const defaultNewNode = {
-    name: "",
-    location: "",
-    fqdn: "",
-    memory: "32",
-    disk: "250",
-    portsStart: "25565",
-    portsEnd: "25575",
-    os: "debian" as Node['os'],
-};
-
-export function NodeManagement() {
+export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [open, setOpen] = useState(false);
-  const [newNodeDetails, setNewNodeDetails] = useState(defaultNewNode);
   const [guideDialogOpen, setGuideDialogOpen] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [guideContent, setGuideContent] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
   const { toast } = useToast();
+  const [formState, formAction] = useFormState(createNode, initialState);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setNewNodeDetails(prev => ({ ...prev, [id]: value }));
-  };
-
-  const handleOsChange = (value: Node['os']) => {
-    setNewNodeDetails(prev => ({...prev, os: value}));
-  }
-
-  const handleCreateNode = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newNodeDetails.name || !newNodeDetails.location || !newNodeDetails.fqdn) return;
-
-    const newNode: Node = {
-        id: `node-${nodes.length + 1}`,
-        name: newNodeDetails.name,
-        location: newNodeDetails.location,
-        fqdn: newNodeDetails.fqdn,
-        memory: parseInt(newNodeDetails.memory, 10),
-        disk: parseInt(newNodeDetails.disk, 10),
-        os: newNodeDetails.os,
-        ports: {
-            start: parseInt(newNodeDetails.portsStart, 10),
-            end: parseInt(newNodeDetails.portsEnd, 10),
-        },
-        servers: 0,
-        status: "Offline",
-    };
-    
-    setNodes(prev => [...prev, newNode]);
-    setOpen(false);
-    setNewNodeDetails(defaultNewNode);
-    toast({
+  useEffect(() => {
+    if (formState.success) {
+      setOpen(false);
+      toast({
         title: "Node Created",
-        description: `New node "${newNode.name}" has been created.`,
-    })
-  };
+        description: `Your new node has been created.`,
+      });
+    }
+  }, [formState, toast]);
+
+  useEffect(() => {
+    setNodes(initialNodes);
+  }, [initialNodes]);
 
   const handleOpenGuide = async (node: Node) => {
     setSelectedNode(node);
@@ -111,7 +72,6 @@ export function NodeManagement() {
     setIsGenerating(true);
     setGuideContent(null);
 
-    // Use the current window's origin as the panel URL for a real-world scenario.
     const panelUrl = window.location.origin;
     const result = await getNodeInstallerGuide(node.id, panelUrl, node.os);
     if (result.guide) {
@@ -128,21 +88,28 @@ export function NodeManagement() {
     setIsGenerating(false);
   };
   
-  const handleCheckStatus = (nodeId: string) => {
-    setNodes(prev =>
-      prev.map(node => {
-        if (node.id === nodeId) {
-          const newStatus = node.status === 'Offline' ? 'Online' : 'Offline';
-          toast({
-            title: `Node is now ${newStatus}`,
-            description: `Status for node "${node.name}" has been updated.`,
-          });
-          return { ...node, status: newStatus };
+  const handleCheckStatus = (node: Node) => {
+    startTransition(async () => {
+        const result = await updateNodeStatus(node.id, node.status);
+        if (result.success) {
+            toast({
+                title: `Node is now ${result.newStatus}`,
+                description: `Status for node "${node.name}" has been updated.`,
+            });
         }
-        return node;
-      })
-    );
+    });
   };
+
+  const handleDelete = (nodeId: string) => {
+    startTransition(async () => {
+        await deleteNode(nodeId);
+        toast({
+            title: "Node Deleted",
+            description: "The node has been successfully deleted.",
+            variant: "destructive"
+        });
+    });
+  }
 
   const getStatusBadge = (status: Node['status']) => {
     if (status === 'Online') {
@@ -162,7 +129,7 @@ export function NodeManagement() {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
-            <form onSubmit={handleCreateNode}>
+            <form action={formAction}>
                 <DialogHeader>
                   <DialogTitle>Create New Node</DialogTitle>
                   <DialogDescription>
@@ -172,11 +139,11 @@ export function NodeManagement() {
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="name" className="text-right">Name</Label>
-                    <Input id="name" value={newNodeDetails.name} onChange={handleInputChange} className="col-span-3" placeholder="e.g., US-West-1" required />
+                    <Input id="name" name="name" className="col-span-3" placeholder="e.g., US-West-1" required />
                   </div>
                    <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="os" className="text-right">OS</Label>
-                    <Select onValueChange={handleOsChange} defaultValue={newNodeDetails.os}>
+                    <Select name="os" defaultValue="debian">
                         <SelectTrigger className="col-span-3">
                             <SelectValue placeholder="Select an OS" />
                         </SelectTrigger>
@@ -188,25 +155,25 @@ export function NodeManagement() {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="location" className="text-right">Location</Label>
-                    <Input id="location" value={newNodeDetails.location} onChange={handleInputChange} className="col-span-3" placeholder="e.g., Los Angeles, CA" required />
+                    <Input id="location" name="location" className="col-span-3" placeholder="e.g., Los Angeles, CA" required />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="fqdn" className="text-right">FQDN</Label>
-                    <Input id="fqdn" value={newNodeDetails.fqdn} onChange={handleInputChange} className="col-span-3" placeholder="e.g., node.example.com" required />
+                    <Input id="fqdn" name="fqdn" className="col-span-3" placeholder="e.g., node.example.com" required />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="memory" className="text-right">Memory (GB)</Label>
-                    <Input id="memory" type="number" value={newNodeDetails.memory} onChange={handleInputChange} className="col-span-3" placeholder="e.g., 64" required />
+                    <Input id="memory" name="memory" type="number" defaultValue="32" className="col-span-3" placeholder="e.g., 64" required />
                   </div>
                    <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="disk" className="text-right">Disk (GB)</Label>
-                    <Input id="disk" type="number" value={newNodeDetails.disk} onChange={handleInputChange} className="col-span-3" placeholder="e.g., 500" required />
+                    <Input id="disk" name="disk" type="number" defaultValue="250" className="col-span-3" placeholder="e.g., 500" required />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="ports" className="text-right">Port Range</Label>
                     <div className="col-span-3 grid grid-cols-2 gap-2">
-                        <Input id="portsStart" type="number" value={newNodeDetails.portsStart} onChange={handleInputChange} placeholder="e.g., 25565" required />
-                        <Input id="portsEnd" type="number" value={newNodeDetails.portsEnd} onChange={handleInputChange} placeholder="e.g., 25575" required />
+                        <Input id="portsStart" name="portsStart" type="number" defaultValue="25565" placeholder="e.g., 25565" required />
+                        <Input id="portsEnd" name="portsEnd" type="number" defaultValue="25575" placeholder="e.g., 25575" required />
                     </div>
                   </div>
                 </div>
@@ -235,7 +202,7 @@ export function NodeManagement() {
           </TableHeader>
           <TableBody>
             {nodes.length > 0 ? nodes.map((node) => (
-              <TableRow key={node.id}>
+              <TableRow key={node.id} className={isPending ? 'opacity-50' : ''}>
                 <TableCell>
                   <div className="font-medium flex items-center gap-2">{node.name} <Badge variant="outline">{node.os}</Badge></div>
                   <div className="text-sm text-muted-foreground">{node.fqdn}</div>
@@ -255,7 +222,7 @@ export function NodeManagement() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleCheckStatus(node.id)}>
+                            <DropdownMenuItem onClick={() => handleCheckStatus(node)}>
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Check Status
                             </DropdownMenuItem>
@@ -263,8 +230,10 @@ export function NodeManagement() {
                                 <BookOpen className="mr-2 h-4 w-4" />
                                 Installation Guide
                             </DropdownMenuItem>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive">Delete</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(node.id)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </TableCell>

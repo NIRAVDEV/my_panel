@@ -1,6 +1,8 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { useFormState } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -32,92 +34,48 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import type { User } from "@/lib/types";
+import { createUser, deleteUser } from "@/lib/actions";
+import { useToast } from "@/hooks/use-toast";
 
-type User = {
-  name: string;
-  email: string;
-  avatar: string;
-  fallback: string;
-  role: "Admin" | "User";
-  avatarHint?: string;
+const initialState = {
+    errors: {},
+    success: false,
 };
 
-const initialUsers: User[] = [
-  {
-    name: "Admin",
-    email: "admin@example.com",
-    avatar: "https://placehold.co/40x40.png",
-    fallback: "A",
-    role: "Admin",
-    avatarHint: "administrator portrait",
-  },
-  {
-    name: "Steve",
-    email: "steve@jexactyl.pro",
-    avatar: "https://placehold.co/40x40.png",
-    fallback: "S",
-    role: "User",
-    avatarHint: "male portrait",
-  },
-  {
-    name: "Alex",
-    email: "alex@jexactyl.pro",
-    avatar: "https://placehold.co/40x40.png",
-    fallback: "A",
-    role: "User",
-    avatarHint: "female portrait",
-  },
-];
-
-export function UserManagement() {
+export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [open, setOpen] = useState(false);
-  
-  const [newUser, setNewUser] = useState({
-      email: "",
-      password: "",
-      role: "User" as "Admin" | "User"
-  });
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+  const [formState, formAction] = useFormState(createUser, initialState);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setNewUser(prev => ({ ...prev, [id]: value }));
-  };
+  useEffect(() => {
+    setUsers(initialUsers);
+  }, [initialUsers]);
 
-  const handleRoleChange = (value: "Admin" | "User") => {
-      setNewUser(prev => ({ ...prev, role: value }));
-  };
-
-  const handleAddUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUser.email || !newUser.password) {
-        // In a real app, you'd show a toast or form error
-        return;
+  useEffect(() => {
+    if (formState.success) {
+      setOpen(false);
+      toast({
+        title: "User Created",
+        description: `The new user account has been created.`,
+      });
     }
-    const name = newUser.email.split('@')[0];
-    const fallback = name.charAt(0).toUpperCase();
+  }, [formState, toast]);
 
-    const userToAdd: User = {
-        name: name,
-        email: newUser.email,
-        role: newUser.role,
-        avatar: `https://placehold.co/40x40.png`,
-        fallback: fallback,
-        avatarHint: "user portrait"
-    };
-    
-    setUsers(prev => [...prev, userToAdd]);
-    setOpen(false); // Close dialog
-    // Reset form
-    setNewUser({ email: "", password: "", role: "User"});
-  };
-
-  const handleDeleteUser = (email: string) => {
-    setUsers(users => users.filter(user => user.email !== email));
+  const handleDelete = (userId: string) => {
+    startTransition(async () => {
+      await deleteUser(userId);
+      toast({
+          title: "User Deleted",
+          description: "The user has been successfully deleted.",
+          variant: "destructive"
+      });
+    });
   }
-
 
   return (
     <CardContent>
@@ -130,7 +88,7 @@ export function UserManagement() {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
-            <form onSubmit={handleAddUser}>
+            <form action={formAction}>
                 <DialogHeader>
                 <DialogTitle>Add New User</DialogTitle>
                 <DialogDescription>
@@ -142,19 +100,19 @@ export function UserManagement() {
                     <Label htmlFor="email" className="text-right">
                     Email
                     </Label>
-                    <Input id="email" type="email" value={newUser.email} onChange={handleInputChange} className="col-span-3" placeholder="user@example.com" required />
+                    <Input id="email" name="email" type="email" className="col-span-3" placeholder="user@example.com" required />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="password" className="text-right">
                     Password
                     </Label>
-                    <Input id="password" type="password" value={newUser.password} onChange={handleInputChange} className="col-span-3" required />
+                    <Input id="password" name="password" type="password" className="col-span-3" required />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="role" className="text-right">
                     Role
                     </Label>
-                    <Select onValueChange={handleRoleChange} defaultValue={newUser.role}>
+                    <Select name="role" defaultValue="User">
                     <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
@@ -171,7 +129,7 @@ export function UserManagement() {
                             Cancel
                         </Button>
                     </DialogClose>
-                    <Button type="submit">Save changes</Button>
+                    <Button type="submit" disabled={isPending}>Save changes</Button>
                 </DialogFooter>
             </form>
           </DialogContent>
@@ -189,7 +147,7 @@ export function UserManagement() {
           </TableHeader>
           <TableBody>
             {users.map((user) => (
-              <TableRow key={user.email}>
+              <TableRow key={user.id} className={isPending ? 'opacity-50' : ''}>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-9 w-9">
@@ -217,12 +175,12 @@ export function UserManagement() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
                             <DropdownMenuItem 
                                 className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                                onClick={() => handleDeleteUser(user.email)}
+                                onClick={() => handleDelete(user.id)}
                                 disabled={user.email === 'admin@example.com'}
                             >
+                                <Trash2 className="mr-2 h-4 w-4" />
                                 Delete
                             </DropdownMenuItem>
                         </DropdownMenuContent>

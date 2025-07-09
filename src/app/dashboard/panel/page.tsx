@@ -1,7 +1,11 @@
+
 import { ServerList } from "@/components/panel/server-list";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getServers } from "@/lib/actions";
 
-export default function PanelPage() {
+export default async function PanelPage() {
+  const initialServers = await getServers();
+
   return (
     <div className="max-w-7xl mx-auto">
       <Card>
@@ -11,7 +15,7 @@ export default function PanelPage() {
             Manage your Minecraft servers.
           </CardDescription>
         </CardHeader>
-        <ServerList />
+        <ServerList initialServers={initialServers} />
       </Card>
     </div>
   );

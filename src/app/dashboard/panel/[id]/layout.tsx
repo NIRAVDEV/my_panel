@@ -1,22 +1,23 @@
 
-import { initialServers } from "@/lib/server-data";
+
+import { getServerById, updateServerStatus } from "@/lib/actions";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Play, RefreshCw, Square } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { Server } from "@/lib/server-data";
+import type { Server } from "@/lib/types";
 import { ServerNav } from "@/components/panel/server-nav";
 import { Card } from "@/components/ui/card";
 
-export default function ServerManagementLayout({
+export default async function ServerManagementLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
   params: { id: string };
 }) {
-  const server = initialServers.find((s) => s.id === params.id);
+  const server = await getServerById(params.id);
 
   if (!server) {
     notFound();
@@ -49,15 +50,21 @@ export default function ServerManagementLayout({
             </div>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={server.status === 'Online' || server.status === 'Starting'}>
+          <form action={updateServerStatus.bind(null, server.id, 'start')}>
+            <Button type="submit" variant="outline" size="sm" disabled={server.status === 'Online' || server.status === 'Starting'}>
                 <Play className="mr-2 h-4 w-4" /> Start
             </Button>
-             <Button variant="outline" size="sm" disabled={server.status === 'Offline' || server.status === 'Starting'}>
+          </form>
+          <form action={updateServerStatus.bind(null, server.id, 'restart')}>
+             <Button type="submit" variant="outline" size="sm" disabled={server.status === 'Offline' || server.status === 'Starting'}>
                 <RefreshCw className="mr-2 h-4 w-4" /> Restart
             </Button>
-            <Button variant="destructive" size="sm" disabled={server.status === 'Offline'}>
+          </form>
+          <form action={updateServerStatus.bind(null, server.id, 'stop')}>
+            <Button type="submit" variant="destructive" size="sm" disabled={server.status === 'Offline'}>
                 <Square className="mr-2 h-4 w-4" /> Stop
             </Button>
+          </form>
         </div>
       </div>
       

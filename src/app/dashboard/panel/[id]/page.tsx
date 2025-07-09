@@ -1,5 +1,6 @@
 
-import { initialServers } from "@/lib/server-data";
+
+import { getServerById } from "@/lib/actions";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Cpu, HardDrive, Users } from "lucide-react";
@@ -7,8 +8,8 @@ import { StatsCard } from "@/components/dashboard/stats-card";
 import { ResourceCharts } from "@/components/dashboard/resource-charts";
 import { Badge } from "@/components/ui/badge";
 
-export default function ServerOverviewPage({ params }: { params: { id: string } }) {
-  const server = initialServers.find((s) => s.id === params.id);
+export default async function ServerOverviewPage({ params }: { params: { id: string } }) {
+  const server = await getServerById(params.id);
 
   if (!server) {
     notFound();
