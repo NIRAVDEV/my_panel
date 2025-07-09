@@ -53,9 +53,9 @@ type InstallerGuideState = {
     error?: string;
 }
 
-export async function getNodeInstallerGuide(nodeId: string, panelUrl: string): Promise<InstallerGuideState> {
+export async function getNodeInstallerGuide(nodeId: string, panelUrl: string, os: string): Promise<InstallerGuideState> {
     try {
-        const result = await generateNodeInstaller({ nodeId, panelUrl });
+        const result = await generateNodeInstaller({ nodeId, panelUrl, os });
         return { guide: result.guide };
     } catch (error) {
         console.error(error);

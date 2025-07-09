@@ -28,6 +28,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 import { getNodeInstallerGuide } from "@/lib/actions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 type Node = {
   id: string;
@@ -38,6 +40,7 @@ type Node = {
   disk: number; // in GB
   ports: { start: number; end: number };
   servers: number;
+  os: "debian" | "nixos";
 };
 
 const initialNodes: Node[] = [];
@@ -50,6 +53,7 @@ const defaultNewNode = {
     disk: "250",
     portsStart: "25565",
     portsEnd: "25575",
+    os: "debian" as Node['os'],
 };
 
 export function NodeManagement() {
@@ -67,6 +71,10 @@ export function NodeManagement() {
     setNewNodeDetails(prev => ({ ...prev, [id]: value }));
   };
 
+  const handleOsChange = (value: Node['os']) => {
+    setNewNodeDetails(prev => ({...prev, os: value}));
+  }
+
   const handleCreateNode = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNodeDetails.name || !newNodeDetails.location || !newNodeDetails.fqdn) return;
@@ -78,6 +86,7 @@ export function NodeManagement() {
         fqdn: newNodeDetails.fqdn,
         memory: parseInt(newNodeDetails.memory, 10),
         disk: parseInt(newNodeDetails.disk, 10),
+        os: newNodeDetails.os,
         ports: {
             start: parseInt(newNodeDetails.portsStart, 10),
             end: parseInt(newNodeDetails.portsEnd, 10),
@@ -102,7 +111,7 @@ export function NodeManagement() {
 
     // Use the current window's origin as the panel URL for a real-world scenario.
     const panelUrl = window.location.origin;
-    const result = await getNodeInstallerGuide(node.id, panelUrl);
+    const result = await getNodeInstallerGuide(node.id, panelUrl, node.os);
     if (result.guide) {
         setGuideContent(result.guide);
     } else {
@@ -139,6 +148,18 @@ export function NodeManagement() {
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="name" className="text-right">Name</Label>
                     <Input id="name" value={newNodeDetails.name} onChange={handleInputChange} className="col-span-3" placeholder="e.g., US-West-1" required />
+                  </div>
+                   <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="os" className="text-right">OS</Label>
+                    <Select onValueChange={handleOsChange} defaultValue={newNodeDetails.os}>
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Select an OS" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="debian">Debian / Ubuntu</SelectItem>
+                            <SelectItem value="nixos">NixOS</SelectItem>
+                        </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="location" className="text-right">Location</Label>
@@ -190,7 +211,7 @@ export function NodeManagement() {
             {nodes.length > 0 ? nodes.map((node) => (
               <TableRow key={node.id}>
                 <TableCell>
-                  <div className="font-medium">{node.name}</div>
+                  <div className="font-medium flex items-center gap-2">{node.name} <Badge variant="outline">{node.os}</Badge></div>
                   <div className="text-sm text-muted-foreground">{node.fqdn}</div>
                 </TableCell>
                 <TableCell>{node.location}</TableCell>
@@ -233,7 +254,7 @@ export function NodeManagement() {
           <DialogHeader>
             <DialogTitle>Installation Guide for {selectedNode?.name}</DialogTitle>
             <DialogDescription>
-              Follow these steps on your new VPS to configure it as a server node.
+              Follow these steps on your new {selectedNode?.os === 'nixos' ? 'NixOS' : 'Debian/Ubuntu'} VPS to configure it as a server node.
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-md border p-4 h-[60vh] overflow-y-auto bg-muted">

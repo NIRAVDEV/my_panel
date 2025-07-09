@@ -13,6 +13,7 @@ import {z} from 'genkit';
 const GenerateNodeInstallerInputSchema = z.object({
   nodeId: z.string().describe('The unique ID of the node to be installed.'),
   panelUrl: z.string().describe('The base URL of the control panel.'),
+  os: z.string().optional().describe('The operating system of the VPS. Can be "debian" or "nixos". Defaults to "debian".'),
 });
 export type GenerateNodeInstallerInput = z.infer<typeof GenerateNodeInstallerInputSchema>;
 
@@ -33,20 +34,28 @@ const prompt = ai.definePrompt({
 
   The user's control panel is located at: {{{panelUrl}}}
   The unique ID for this new node is: {{{nodeId}}}
+  The target operating system is: {{{os}}}
 
-  Generate a step-by-step guide in Markdown format for setting up a fresh Debian-based Linux (like Ubuntu) server. The guide must include the following steps:
+  Generate a step-by-step guide in Markdown format for setting up the server. The guide should be concise and focus only on the commands to be executed.
 
-  1.  **System Update:** Instructions to update and upgrade system packages.
-  2.  **Docker Installation:** Clear instructions to install Docker Engine.
-  3.  **Node Service Setup:** Provide a single command to download and run a Docker container for the node software. This command should be pre-configured to communicate back to the control panel. Use the provided Node ID and Panel URL in the command. Create a placeholder \`jexactyl/wings\` docker image for this. The command should look something like this, but feel free to make it more robust (e.g., ensuring it restarts automatically):
+  If the OS is 'nixos', provide instructions to:
+  1.  Explain that the user needs to edit their /etc/nixos/configuration.nix file.
+  2.  Provide the necessary Nix configuration snippet to enable Docker and configure the node service as a systemd service using the same Docker container.
+  3.  Instruct the user to run 'sudo nixos-rebuild switch'.
+  4.  Provide a command to verify the service is running (e.g., systemctl status wings).
 
-      \`\`\`bash
-      docker run -d --restart=always --name=wings -p 8080:8080 -p 2022:2022 -v /var/run/docker.sock:/var/run/docker.sock -v /etc/pterodactyl:/etc/pterodactyl -e WINGS_UID=988 -e WINGS_GID=988 -e WINGS_TOKEN={{{nodeId}}} -e WINGS_URL={{{panelUrl}}} jexactyl/wings
-      \`\`\`
+  If the OS is 'debian' or anything else, provide instructions to:
+  1.  **System Update:** Commands to update and upgrade system packages.
+  2.  **Docker Installation:** Commands to install Docker Engine.
+  3.  **Node Service Setup:** Provide the single command to download and run the Docker container for the node software.
+  4.  **Verification:** A simple command on how the user can check if the node service is running correctly.
 
-  4.  **Verification:** A simple step on how the user can check if the node service is running correctly.
+  Use this Docker command as the base for the service:
+  \`\`\`bash
+  docker run -d --restart=always --name=wings -p 8080:8080 -p 2022:2022 -v /var/run/docker.sock:/var/run/docker.sock -v /etc/pterodactyl:/etc/pterodactyl -e WINGS_UID=988 -e WINGS_GID=988 -e WINGS_TOKEN={{{nodeId}}} -e WINGS_URL={{{panelUrl}}} jexactyl/wings
+  \`\`\`
 
-  Ensure the guide is clear, easy to follow, and uses best practices for server setup. Structure the output as a single Markdown string.
+  Ensure the output is only the raw Markdown content. Do not add any extra commentary before or after the guide.
   `,
 });
 
@@ -57,9 +66,6 @@ const generateNodeInstallerFlow = ai.defineFlow(
     outputSchema: GenerateNodeInstallerOutputSchema,
   },
   async input => {
-    // In a real application, you might generate a secure, one-time token here
-    // and associate it with the nodeId in your database.
-    // For this demo, we'll use the nodeId directly as a placeholder token.
     const {output} = await prompt(input);
     return output!;
   }
