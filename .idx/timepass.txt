@@ -1,0 +1,96 @@
+{ config, pkgs, ... }:
+
+let
+  # Define common locale settings for better readability
+  usLocaleSettings = {
+    LC_ADDRESS = "US";
+    LC_IDENTIFICATION = "US";
+    LC_MEASUREMENT = "US";
+    LC_MONETARY = "US";
+    LC_NAME = "US";
+    LC_NUMERIC = "US";
+    LC_PAPER = "US";
+    LC_TELEPHONE = "US";
+    LC_TIME = "US";
+  };
+
+  # Define Pterodactyl Wings variables for easier modification
+  wingsImage = "jexactyl/wings";
+  wingsContainerName = "wings";
+  wingsHttpPort = 8080;
+  wingsSftpPort = 2022;
+  wingsUid = 988;
+  wingsGid = 988;
+  wingsToken = "node-1";
+  wingsUrl = "https://6000-firebase-studio-1751979497038.cluster-bg6uurscprhn6qxr6xwtrhvkf6.cloudworkstations.dev";
+
+in
+{
+  imports = []; # Consider adding common modules here if you have them
+
+  ## Boot Loader Configuration
+  boot.loader = {
+    systemd-boot.enable = true;
+    efi.canTouchEfiVariables = true;
+  };
+
+  ## Networking
+  networking = {
+    hostName = "nixos";
+    networkmanager.enable = true;
+  };
+
+  ## Time and Localization
+  time.timeZone = "Etc/UTC";
+  i18n = {
+    defaultLocale = "en_US.UTF-8";
+    extraLocaleSettings = usLocaleSettings; # Use the defined variable
+  };
+
+  ## Services
+  services = {
+    openssh.enable = true;
+    virtualisation.docker.enable = true; # Enable Docker as a service
+
+    # Pterodactyl Wings Daemon
+    systemd.services.wings = {
+      description = "Pterodactyl Wings Daemon";
+      after = [ "docker.service" ];
+      requires = [ "docker.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "simple";
+        Restart = "always";
+        # Construct the ExecStart command with variables for clarity
+        ExecStart = "${pkgs.docker}/bin/docker run \
+          --name=${wingsContainerName} \
+          -d \
+          --restart=always \
+          -p ${toString wingsHttpPort}:${toString wingsHttpPort} \
+          -p ${toString wingsSftpPort}:${toString wingsSftpPort} \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          -v /etc/pterodactyl:/etc/pterodactyl \
+          -e WINGS_UID=${toString wingsUid} \
+          -e WINGS_GID=${toString wingsGid} \
+          -e WINGS_TOKEN=${wingsToken} \
+          -e WINGS_URL=${wingsUrl} \
+          ${wingsImage}";
+      };
+    };
+  };
+
+  ## User Configuration
+  users.users.root.openssh.allowedKeys = [ ]; # Keep this empty if no keys are needed
+
+  ## System Packages
+  environment.systemPackages = with pkgs; [
+    vim
+    wget
+    git
+    curl
+    tmux
+  ];
+
+  ## System Version
+  system.stateVersion = "23.11"; # Ensure this matches your NixOS release
+}

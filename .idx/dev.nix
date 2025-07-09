@@ -1,22 +1,31 @@
-# To learn more about how to use Nix to configure your environment
-# see: https://firebase.google.com/docs/studio/customize-workspace
-{pkgs}: {
-  # Which nixpkgs channel to use.
-  channel = "stable-24.11"; # or "unstable"
-  # Use https://search.nixos.org/packages to find packages
+{pkgs}:
+
+{
+
+  ## System Package
   packages = [
     pkgs.nodejs_20
     pkgs.zulu
+    pkgs.sudo
+    pkgs.bash
+    pkgs.vim
+    pkgs.wget
+    pkgs.git
+    pkgs.curl
+    pkgs.tmux
   ];
-  # Sets environment variables in the workspace
-  env = {};
-  # This adds a file watcher to startup the firebase emulators. The emulators will only start if
-  # a firebase.json file is written into the user's directory
-  services.firebase.emulators = {
-    detect = true;
-    projectId = "demo-app";
-    services = ["auth" "firestore"];
-  };
+  # Integrated 'idx' configuration
+  # NOTE: The 'idx' attribute is specific to certain Nix-based development environments
+  # like Google Cloud Workstations. It's not a standard NixOS option.
+  # If you're running on plain NixOS, this section will cause an error unless you have
+  # a custom NixOS module defining 'config.idx'.
+  # If you intend to use this *within* a Firebase Studio/Workstation context,
+  # this file might be an 'overlay' or a specific configuration file they expect,
+  # not your primary /etc/nixos/configuration.nix.
+  # For a regular NixOS setup, you would typically manage VS Code extensions
+  # and workspace settings through other means (e.g., home-manager, or manually
+  # configuring VS Code after installation).
+  # I'm including it as-is, but be aware of its specific context.
   idx = {
     # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
     extensions = [
