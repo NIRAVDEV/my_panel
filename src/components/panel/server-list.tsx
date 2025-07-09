@@ -208,7 +208,7 @@ export function ServerList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {servers.map((server) => (
+            {servers.length > 0 ? servers.map((server) => (
               <TableRow key={server.id}>
                 <TableCell>
                   <div className="font-medium">
@@ -254,7 +254,13 @@ export function ServerList() {
                     </DropdownMenu>
                 </TableCell>
               </TableRow>
-            ))}
+            )) : (
+              <TableRow>
+                <TableCell colSpan={4} className="h-24 text-center">
+                  No servers created yet.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>

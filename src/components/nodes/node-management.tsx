@@ -40,10 +40,7 @@ type Node = {
   servers: number;
 };
 
-const initialNodes: Node[] = [
-  { id: 'node-1', name: 'US-East-1', location: 'Ashburn, VA', fqdn: 'node1.jexactyl.pro', memory: 64, disk: 500, ports: { start: 25565, end: 25575 }, servers: 3 },
-  { id: 'node-2', name: 'EU-West-1', location: 'Frankfurt, DE', fqdn: 'node2.jexactyl.pro', memory: 128, disk: 1000, ports: { start: 25565, end: 25585 }, servers: 5 },
-];
+const initialNodes: Node[] = [];
 
 const defaultNewNode = {
     name: "",
@@ -190,7 +187,7 @@ export function NodeManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {nodes.map((node) => (
+            {nodes.length > 0 ? nodes.map((node) => (
               <TableRow key={node.id}>
                 <TableCell>
                   <div className="font-medium">{node.name}</div>
@@ -220,7 +217,13 @@ export function NodeManagement() {
                     </DropdownMenu>
                 </TableCell>
               </TableRow>
-            ))}
+            )) : (
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  No nodes created yet.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
