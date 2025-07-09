@@ -23,9 +23,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { BookOpen, MoreHorizontal, PlusCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { getNodeInstallerGuide } from "@/lib/actions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Node = {
   id: string;
@@ -57,6 +59,10 @@ export function NodeManagement() {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [open, setOpen] = useState(false);
   const [newNodeDetails, setNewNodeDetails] = useState(defaultNewNode);
+  const [guideDialogOpen, setGuideDialogOpen] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [guideContent, setGuideContent] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,6 +95,27 @@ export function NodeManagement() {
         title: "Node Created",
         description: `New node "${newNode.name}" has been created.`,
     })
+  };
+
+  const handleOpenGuide = async (node: Node) => {
+    setSelectedNode(node);
+    setGuideDialogOpen(true);
+    setIsGenerating(true);
+    setGuideContent(null);
+
+    const result = await getNodeInstallerGuide(node.id);
+    if (result.guide) {
+        setGuideContent(result.guide);
+    } else {
+        const errorMsg = result.error || "An unknown error occurred.";
+        setGuideContent(errorMsg);
+        toast({
+            title: "Error",
+            description: errorMsg,
+            variant: "destructive"
+        })
+    }
+    setIsGenerating(false);
   };
 
   return (
@@ -181,6 +208,10 @@ export function NodeManagement() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleOpenGuide(node)}>
+                                <BookOpen className="mr-2 h-4 w-4" />
+                                Installation Guide
+                            </DropdownMenuItem>
                             <DropdownMenuItem>Edit</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive">Delete</DropdownMenuItem>
                         </DropdownMenuContent>
@@ -191,6 +222,39 @@ export function NodeManagement() {
           </TableBody>
         </Table>
       </div>
+      
+      <Dialog open={guideDialogOpen} onOpenChange={setGuideDialogOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Installation Guide for {selectedNode?.name}</DialogTitle>
+            <DialogDescription>
+              Follow these steps on your new VPS to configure it as a server node.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border p-4 h-[60vh] overflow-y-auto bg-muted">
+            {isGenerating ? (
+              <div className="space-y-4">
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <br/>
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : (
+                <pre className="text-sm font-mono whitespace-pre-wrap bg-transparent border-none p-0 text-foreground">
+                    {guideContent}
+                </pre>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </CardContent>
   );
 }

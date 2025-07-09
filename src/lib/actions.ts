@@ -1,6 +1,7 @@
 "use server";
 
 import { generateServerGuide } from "@/ai/flows/generate-server-guide";
+import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
 import { summarizeServerActivity } from "@/ai/flows/summarize-server-activity";
 import { z } from "zod";
 
@@ -55,5 +56,23 @@ export async function summarizeActivity(): Promise<SummaryState> {
         return { summary: result.summary, trends: result.trends };
     } catch (error) {
         return { error: "Failed to generate summary. The AI model might be unavailable. Please try again later." };
+    }
+}
+
+type InstallerGuideState = {
+    guide?: string;
+    error?: string;
+}
+
+export async function getNodeInstallerGuide(nodeId: string): Promise<InstallerGuideState> {
+    // In a real app, you'd get this from the request or environment variables.
+    const panelUrl = "https://your-panel.jexactyl.pro"; 
+    
+    try {
+        const result = await generateNodeInstaller({ nodeId, panelUrl });
+        return { guide: result.guide };
+    } catch (error) {
+        console.error(error);
+        return { error: "Failed to generate installation guide. The AI model might be unavailable. Please try again later." };
     }
 }
