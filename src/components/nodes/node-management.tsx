@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, MoreHorizontal, PlusCircle } from "lucide-react";
+import { BookOpen, MoreHorizontal, PlusCircle, RefreshCw } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { getNodeInstallerGuide } from "@/lib/actions";
@@ -41,6 +41,7 @@ type Node = {
   ports: { start: number; end: number };
   servers: number;
   os: "debian" | "nixos";
+  status: "Online" | "Offline";
 };
 
 const initialNodes: Node[] = [];
@@ -92,6 +93,7 @@ export function NodeManagement() {
             end: parseInt(newNodeDetails.portsEnd, 10),
         },
         servers: 0,
+        status: "Offline",
     };
     
     setNodes(prev => [...prev, newNode]);
@@ -124,6 +126,29 @@ export function NodeManagement() {
         })
     }
     setIsGenerating(false);
+  };
+  
+  const handleCheckStatus = (nodeId: string) => {
+    setNodes(prev =>
+      prev.map(node => {
+        if (node.id === nodeId) {
+          const newStatus = node.status === 'Offline' ? 'Online' : 'Offline';
+          toast({
+            title: `Node is now ${newStatus}`,
+            description: `Status for node "${node.name}" has been updated.`,
+          });
+          return { ...node, status: newStatus };
+        }
+        return node;
+      })
+    );
+  };
+
+  const getStatusBadge = (status: Node['status']) => {
+    if (status === 'Online') {
+      return <Badge className="bg-green-500 hover:bg-green-600 text-primary-foreground">Online</Badge>;
+    }
+    return <Badge variant="destructive">Offline</Badge>;
   };
 
   return (
@@ -201,6 +226,7 @@ export function NodeManagement() {
           <TableHeader>
             <TableRow>
               <TableHead>Node Name</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Servers</TableHead>
               <TableHead>Allocation</TableHead>
@@ -214,6 +240,7 @@ export function NodeManagement() {
                   <div className="font-medium flex items-center gap-2">{node.name} <Badge variant="outline">{node.os}</Badge></div>
                   <div className="text-sm text-muted-foreground">{node.fqdn}</div>
                 </TableCell>
+                <TableCell>{getStatusBadge(node.status)}</TableCell>
                 <TableCell>{node.location}</TableCell>
                 <TableCell>{node.servers}</TableCell>
                 <TableCell>
@@ -228,6 +255,10 @@ export function NodeManagement() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleCheckStatus(node.id)}>
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Check Status
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleOpenGuide(node)}>
                                 <BookOpen className="mr-2 h-4 w-4" />
                                 Installation Guide
@@ -240,7 +271,7 @@ export function NodeManagement() {
               </TableRow>
             )) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   No nodes created yet.
                 </TableCell>
               </TableRow>
