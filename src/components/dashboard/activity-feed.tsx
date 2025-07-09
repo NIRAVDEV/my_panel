@@ -52,7 +52,14 @@ export function ActivityFeed() {
 
   const handleSummarize = () => {
     startTransition(async () => {
-      const result = await summarizeActivity();
+      // Generate a log string from the activities displayed in the feed.
+      const activityLog = activities
+        .map(
+          (activity) =>
+            `[${activity.time}] ${activity.player} ${activity.action}`
+        )
+        .join("\n");
+      const result = await summarizeActivity(activityLog);
       setSummaryState(result);
     });
   };

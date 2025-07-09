@@ -33,26 +33,15 @@ export async function getAIGuide(prevState: any, formData: FormData): Promise<Gu
   }
 }
 
-const mockServerActivityLog = `
-[2024-07-28 10:05:12] [Server thread/INFO]: Steve joined the game
-[2024-07-28 10:12:45] [Server thread/INFO]: Alex crafted a diamond pickaxe
-[2024-07-28 10:15:30] [Server thread/INFO]: Creeper was slain by Alex
-[2024-07-28 10:22:01] [Server thread/INFO]: Steve mined 32 iron ore
-[2024-07-28 10:30:55] [Server thread/INFO]: Alex reached the Nether
-[2024-07-28 10:45:18] [Server thread/INFO]: Player_42 left the game
-[2024-07-28 11:00:03] [Server thread/INFO]: Steve built a small house at X:123 Y:64 Z:456
-[2024-07-28 11:15:22] [Server thread/INFO]: Alex found a fortress in the Nether
-`;
-
 type SummaryState = {
   summary?: string;
   trends?: string;
   error?: string;
 };
 
-export async function summarizeActivity(): Promise<SummaryState> {
+export async function summarizeActivity(serverActivityLog: string): Promise<SummaryState> {
     try {
-        const result = await summarizeServerActivity({ serverActivityLog: mockServerActivityLog });
+        const result = await summarizeServerActivity({ serverActivityLog });
         return { summary: result.summary, trends: result.trends };
     } catch (error) {
         return { error: "Failed to generate summary. The AI model might be unavailable. Please try again later." };
@@ -64,10 +53,7 @@ type InstallerGuideState = {
     error?: string;
 }
 
-export async function getNodeInstallerGuide(nodeId: string): Promise<InstallerGuideState> {
-    // In a real app, you'd get this from the request or environment variables.
-    const panelUrl = "https://your-panel.jexactyl.pro"; 
-    
+export async function getNodeInstallerGuide(nodeId: string, panelUrl: string): Promise<InstallerGuideState> {
     try {
         const result = await generateNodeInstaller({ nodeId, panelUrl });
         return { guide: result.guide };

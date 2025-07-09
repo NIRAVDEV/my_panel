@@ -103,7 +103,9 @@ export function NodeManagement() {
     setIsGenerating(true);
     setGuideContent(null);
 
-    const result = await getNodeInstallerGuide(node.id);
+    // Use the current window's origin as the panel URL for a real-world scenario.
+    const panelUrl = window.location.origin;
+    const result = await getNodeInstallerGuide(node.id, panelUrl);
     if (result.guide) {
         setGuideContent(result.guide);
     } else {
