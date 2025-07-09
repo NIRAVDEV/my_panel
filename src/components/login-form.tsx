@@ -33,12 +33,11 @@ export function LoginForm() {
               type="email"
               placeholder="admin@example.com"
               required
-              defaultValue="admin@example.com"
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required defaultValue="admin123" />
+            <Input id="password" type="password" required />
           </div>
           <Button type="submit" className="w-full mt-2 bg-primary hover:bg-primary/90">
             Sign In
