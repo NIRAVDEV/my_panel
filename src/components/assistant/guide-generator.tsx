@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
+import { useActionState, useFormStatus } from "react-dom";
 import { getAIGuide } from "@/lib/actions";
 import { CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
