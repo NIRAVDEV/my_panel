@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
-import { useFormState } from "react-dom";
+import { useState, useTransition, useEffect, useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -50,7 +49,7 @@ export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-  const [formState, formAction] = useFormState(createUser, initialState);
+  const [formState, formAction] = useActionState(createUser, initialState);
 
   useEffect(() => {
     setUsers(initialUsers);

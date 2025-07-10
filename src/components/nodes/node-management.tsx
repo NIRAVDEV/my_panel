@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useState, useTransition } from "react";
-import { useFormState } from "react-dom";
+import { useState, useTransition, useActionState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -33,7 +32,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import type { Node } from "@/lib/types";
-import { useEffect } from "react";
 
 const initialState = {
     errors: {},
@@ -50,7 +48,7 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
   const [isPending, startTransition] = useTransition();
 
   const { toast } = useToast();
-  const [formState, formAction] = useFormState(createNode, initialState);
+  const [formState, formAction] = useActionState(createNode, initialState);
 
   useEffect(() => {
     if (formState.success) {

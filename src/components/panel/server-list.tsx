@@ -1,9 +1,8 @@
 
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useActionState } from "react";
 import Link from "next/link";
-import { useFormState } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -50,7 +49,7 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-  const [formState, formAction] = useFormState(createServer, initialState);
+  const [formState, formAction] = useActionState(createServer, initialState);
 
   useEffect(() => {
     setServers(initialServers);
