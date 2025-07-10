@@ -331,12 +331,20 @@ export async function deleteServer(serverId: string) {
 
 
 // User Actions
-const userSchema = z.object({
+const userSchemaBase = z.object({
     name: z.string().min(1, "Name is required"),
     email: z.string().email("Invalid email address"),
-    password: z.string().min(1, "Password is required").optional(),
     role: z.enum(["Admin", "User"]),
 });
+
+const createUserSchema = userSchemaBase.extend({
+    password: z.string().min(1, "Password is required"),
+});
+
+const updateUserSchema = userSchemaBase.extend({
+    password: z.string().optional(),
+});
+
 
 type UserActionState = {
     success: boolean;
@@ -348,7 +356,7 @@ type UserActionState = {
 
 export async function createUser(prevState: any, formData: FormData): Promise<UserActionState> {
     if (!db) return { success: false, error: "Firestore is not configured." };
-    const validatedFields = userSchema.safeParse(Object.fromEntries(formData.entries()));
+    const validatedFields = createUserSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
         return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
@@ -377,7 +385,7 @@ export async function createUser(prevState: any, formData: FormData): Promise<Us
 export async function updateUser(userId: string, prevState: any, formData: FormData): Promise<UserActionState> {
     if (!db) return { success: false, error: "Firestore is not configured." };
     
-    const validatedFields = userSchema.omit({ password: true }).safeParse(Object.fromEntries(formData.entries()));
+    const validatedFields = updateUserSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
         return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
