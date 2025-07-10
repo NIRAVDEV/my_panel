@@ -221,19 +221,24 @@ export async function updateServerStatus(serverId: string, action: "start" | "st
         const serverRef = doc(db, "servers", serverId);
         let status: Server['status'] = 'Offline';
 
-        if (action === "start") status = 'Online';
+        if (action === "start") status = 'Starting';
         if (action === "stop") status = 'Offline';
-        if (action === "restart") status = 'Offline'; // Should go to starting then online
+        if (action === "restart") status = 'Starting';
 
         await updateDoc(serverRef, { status });
-
-        // Simulate startup time
+        
+        // In a real application, the node would report back when the server is online.
+        // For this demo, we'll just update it to Online after a short delay
+        // to show the "Starting" state.
         if (action === "start" || action === "restart") {
+            // This is intentionally not awaited.
+            // We want the server action to return immediately for a responsive UI.
+            // The revalidation will be triggered by a separate process in a real app.
             setTimeout(async () => {
                 await updateDoc(serverRef, { status: "Online" });
-                revalidatePath("/dashboard/panel");
-                revalidatePath(`/dashboard/panel/${serverId}`);
-            }, 3000);
+                 revalidatePath(`/dashboard/panel`);
+                 revalidatePath(`/dashboard/panel/${serverId}`);
+            }, 1500);
         }
 
         revalidatePath("/dashboard/panel");
