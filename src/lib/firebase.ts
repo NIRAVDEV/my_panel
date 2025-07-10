@@ -1,10 +1,6 @@
 
 import { getApp, getApps, initializeApp, type FirebaseOptions } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { config } from 'dotenv';
-
-// Load environment variables from .env file
-config();
 
 // To resolve the "5 NOT_FOUND" error, please ensure the following:
 // 1. You have created a Firestore database in your Firebase project.
@@ -29,7 +25,7 @@ const firebaseConfig: FirebaseOptions = {
 
 function initializeFirebase() {
   if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('YOUR_')) {
-    console.error("Firebase projectId is not set correctly. Please update your .env file.");
+    console.error("Firebase projectId is not set correctly. Please update your .env file with the NEXT_PUBLIC_ prefix.");
     return { app: null, db: null };
   }
   
