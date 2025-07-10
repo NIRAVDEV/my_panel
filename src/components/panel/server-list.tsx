@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useActionState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
@@ -39,32 +39,37 @@ import { useToast } from "@/hooks/use-toast";
 import type { Server } from "@/lib/types";
 import { createServer, updateServerStatus, deleteServer } from "@/lib/actions";
 
+const initialState = {
+  success: false,
+  error: null,
+};
+
 export function ServerList({ initialServers }: { initialServers: Server[] }) {
   const [servers, setServers] = useState<Server[]>(initialServers);
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [formState, formAction] = useActionState(createServer, initialState);
   const { toast } = useToast();
 
   useEffect(() => {
     setServers(initialServers);
   }, [initialServers]);
-
-  const handleCreateServer = async (formData: FormData) => {
-    const result = await createServer(null, formData);
-    if (result.success) {
+  
+  useEffect(() => {
+    if (formState.success) {
       setOpen(false);
       toast({
         title: "Server Created",
         description: `Your new server has been created.`,
       });
-    } else {
-        toast({
-            title: "Error creating server",
-            description: result.error,
-            variant: "destructive"
-        })
+    } else if (formState.error) {
+      toast({
+        title: "Error creating server",
+        description: formState.error,
+        variant: "destructive"
+      });
     }
-  };
+  }, [formState, toast]);
 
   const handleServerAction = (serverId: string, action: "start" | "stop" | "restart") => {
     startTransition(async () => {
@@ -109,7 +114,7 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
-            <form action={handleCreateServer}>
+            <form action={formAction}>
                 <DialogHeader>
                   <DialogTitle>Create New Server</DialogTitle>
                   <DialogDescription>

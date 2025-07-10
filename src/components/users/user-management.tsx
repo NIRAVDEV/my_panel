@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -39,32 +39,37 @@ import type { User } from "@/lib/types";
 import { createUser, deleteUser } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 
+const initialState = {
+  success: false,
+  error: null,
+};
+
 export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [formState, formAction] = useActionState(createUser, initialState);
   const { toast } = useToast();
 
   useEffect(() => {
     setUsers(initialUsers);
   }, [initialUsers]);
 
-  const handleCreateUser = async (formData: FormData) => {
-    const result = await createUser(null, formData);
-    if (result.success) {
-        setOpen(false);
-        toast({
-            title: "User Created",
-            description: `The new user account has been created.`,
-        });
-    } else {
-        toast({
-            title: "Error creating user",
-            description: result.error,
-            variant: "destructive"
-        })
+  useEffect(() => {
+    if (formState.success) {
+      setOpen(false);
+      toast({
+        title: "User Created",
+        description: `The new user account has been created.`,
+      });
+    } else if (formState.error) {
+      toast({
+        title: "Error creating user",
+        description: formState.error,
+        variant: "destructive"
+      });
     }
-  };
+  }, [formState, toast]);
 
   const handleDelete = (userId: string) => {
     startTransition(async () => {
@@ -88,7 +93,7 @@ export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
-            <form action={handleCreateUser}>
+            <form action={formAction}>
                 <DialogHeader>
                 <DialogTitle>Add New User</DialogTitle>
                 <DialogDescription>

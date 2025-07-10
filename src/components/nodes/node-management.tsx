@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -33,6 +33,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import type { Node } from "@/lib/types";
 
+const initialState = {
+  success: false,
+  error: null,
+};
+
 export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [open, setOpen] = useState(false);
@@ -42,28 +47,28 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  const [formState, formAction] = useActionState(createNode, initialState);
   const { toast } = useToast();
 
   useEffect(() => {
     setNodes(initialNodes);
   }, [initialNodes]);
-  
-  const handleCreateNode = async (formData: FormData) => {
-    const result = await createNode(null, formData);
-    if (result?.success) {
+
+  useEffect(() => {
+    if (formState.success) {
       setOpen(false);
       toast({
         title: "Node Created",
         description: `Your new node has been created.`,
       });
-    } else {
-        toast({
-            title: "Error",
-            description: result?.error || "Failed to create node.",
-            variant: "destructive"
-        })
+    } else if (formState.error) {
+      toast({
+        title: "Error",
+        description: formState.error,
+        variant: "destructive"
+      });
     }
-  };
+  }, [formState, toast]);
 
   const handleOpenGuide = async (node: Node) => {
     setSelectedNode(node);
@@ -128,7 +133,7 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
-            <form action={handleCreateNode}>
+            <form action={formAction}>
                 <DialogHeader>
                   <DialogTitle>Create New Node</DialogTitle>
                   <DialogDescription>
