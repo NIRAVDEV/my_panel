@@ -88,6 +88,8 @@ const nodeSchema = z.object({
 });
 
 export async function createNode(prevState: any, formData: FormData) {
+    if (!db) return { error: "Firestore is not configured." };
+
     const validatedFields = nodeSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -119,8 +121,8 @@ export async function createNode(prevState: any, formData: FormData) {
 }
 
 export async function getNodes(): Promise<Node[]> {
+    if (!db) return [];
     try {
-        if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) return [];
         const querySnapshot = await getDocs(collection(db, "nodes"));
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Node));
     } catch (error) {
@@ -130,6 +132,7 @@ export async function getNodes(): Promise<Node[]> {
 }
 
 export async function updateNodeStatus(nodeId: string, currentStatus: "Online" | "Offline") {
+    if (!db) return { error: "Firestore is not configured." };
     try {
         const nodeRef = doc(db, "nodes", nodeId);
         const newStatus = currentStatus === 'Offline' ? 'Online' : 'Offline';
@@ -143,6 +146,7 @@ export async function updateNodeStatus(nodeId: string, currentStatus: "Online" |
 }
 
 export async function deleteNode(nodeId: string) {
+    if (!db) return;
     try {
         await deleteDoc(doc(db, "nodes", nodeId));
         revalidatePath("/dashboard/nodes");
@@ -162,6 +166,7 @@ const serverSchema = z.object({
 });
 
 export async function createServer(prevState: any, formData: FormData) {
+    if (!db) return { error: "Firestore is not configured." };
     const validatedFields = serverSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -191,8 +196,8 @@ export async function createServer(prevState: any, formData: FormData) {
 }
 
 export async function getServers(): Promise<Server[]> {
+    if (!db) return [];
     try {
-        if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) return [];
         const querySnapshot = await getDocs(collection(db, "servers"));
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Server));
     } catch (error) {
@@ -202,8 +207,8 @@ export async function getServers(): Promise<Server[]> {
 }
 
 export async function getServerById(id: string): Promise<Server | null> {
+    if (!db) return null;
     try {
-        if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) return null;
         const docRef = doc(db, "servers", id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
@@ -217,6 +222,7 @@ export async function getServerById(id: string): Promise<Server | null> {
 }
 
 export async function updateServerStatus(serverId: string, action: "start" | "stop" | "restart") {
+    if (!db) return;
     try {
         const serverRef = doc(db, "servers", serverId);
         let status: Server['status'] = 'Offline';
@@ -228,12 +234,7 @@ export async function updateServerStatus(serverId: string, action: "start" | "st
         await updateDoc(serverRef, { status });
         
         // In a real application, the node would report back when the server is online.
-        // For this demo, we'll just update it to Online after a short delay
-        // to show the "Starting" state.
         if (action === "start" || action === "restart") {
-            // This is intentionally not awaited.
-            // We want the server action to return immediately for a responsive UI.
-            // The revalidation will be triggered by a separate process in a real app.
             setTimeout(async () => {
                 await updateDoc(serverRef, { status: "Online" });
                  revalidatePath(`/dashboard/panel`);
@@ -249,6 +250,7 @@ export async function updateServerStatus(serverId: string, action: "start" | "st
 }
 
 export async function deleteServer(serverId: string) {
+    if (!db) return;
     try {
         await deleteDoc(doc(db, "servers", serverId));
         revalidatePath("/dashboard/panel");
@@ -267,6 +269,7 @@ const userSchema = z.object({
 });
 
 export async function createUser(prevState: any, formData: FormData) {
+    if (!db) return { error: "Firestore is not configured." };
     const validatedFields = userSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -297,8 +300,8 @@ export async function createUser(prevState: any, formData: FormData) {
 }
 
 export async function getUsers(): Promise<User[]> {
+    if (!db) return [];
     try {
-        if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) return [];
         const querySnapshot = await getDocs(collection(db, "users"));
         const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
         
@@ -324,6 +327,7 @@ export async function getUsers(): Promise<User[]> {
 }
 
 export async function deleteUser(userId: string) {
+    if (!db) return;
     try {
         await deleteDoc(doc(db, "users", userId));
         revalidatePath("/dashboard/users");
