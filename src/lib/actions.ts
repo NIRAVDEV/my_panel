@@ -120,7 +120,7 @@ export async function createNode(prevState: any, formData: FormData) {
 
 export async function getNodes(): Promise<Node[]> {
     try {
-        if (!db.app.options.apiKey) return []; // Don't fetch if Firebase isn't configured
+        if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) return [];
         const querySnapshot = await getDocs(collection(db, "nodes"));
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Node));
     } catch (error) {
@@ -192,7 +192,7 @@ export async function createServer(prevState: any, formData: FormData) {
 
 export async function getServers(): Promise<Server[]> {
     try {
-        if (!db.app.options.apiKey) return [];
+        if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) return [];
         const querySnapshot = await getDocs(collection(db, "servers"));
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Server));
     } catch (error) {
@@ -203,7 +203,7 @@ export async function getServers(): Promise<Server[]> {
 
 export async function getServerById(id: string): Promise<Server | null> {
     try {
-        if (!db.app.options.apiKey) return null;
+        if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) return null;
         const docRef = doc(db, "servers", id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
@@ -293,7 +293,7 @@ export async function createUser(prevState: any, formData: FormData) {
 
 export async function getUsers(): Promise<User[]> {
     try {
-        if (!db.app.options.apiKey) return [];
+        if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) return [];
         const querySnapshot = await getDocs(collection(db, "users"));
         const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
         
