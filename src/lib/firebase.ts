@@ -1,6 +1,9 @@
 
+import { config } from 'dotenv';
 import { getApp, getApps, initializeApp, type FirebaseOptions } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+
+config(); // Load environment variables from .env file
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,8 +15,8 @@ const firebaseConfig: FirebaseOptions = {
 };
 
 function initializeFirebase() {
-  if (!firebaseConfig.projectId) {
-    console.error("Firebase projectId is not set. Please update your .env file.");
+  if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('YOUR_')) {
+    console.error("Firebase projectId is not set correctly. Please update your .env file.");
     return { app: null, db: null };
   }
   
