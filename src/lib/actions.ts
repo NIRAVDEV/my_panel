@@ -124,7 +124,22 @@ export async function getNodes(): Promise<Node[]> {
     if (!db) return [];
     try {
         const querySnapshot = await getDocs(collection(db, "nodes"));
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Node));
+        const nodes = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                name: data.name,
+                location: data.location,
+                fqdn: data.fqdn,
+                memory: data.memory,
+                disk: data.disk,
+                ports: data.ports,
+                servers: data.servers,
+                os: data.os,
+                status: data.status,
+            } as Node;
+        });
+        return JSON.parse(JSON.stringify(nodes));
     } catch (error) {
         console.error("Error fetching nodes: ", error);
         return [];
@@ -199,7 +214,20 @@ export async function getServers(): Promise<Server[]> {
     if (!db) return [];
     try {
         const querySnapshot = await getDocs(collection(db, "servers"));
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Server));
+        const servers = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                name: data.name,
+                status: data.status,
+                players: data.players,
+                version: data.version,
+                ram: data.ram,
+                storage: data.storage,
+                type: data.type,
+            } as Server;
+        });
+        return JSON.parse(JSON.stringify(servers));
     } catch (error) {
         console.error("Error fetching servers: ", error);
         return [];
@@ -212,7 +240,8 @@ export async function getServerById(id: string): Promise<Server | null> {
         const docRef = doc(db, "servers", id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as Server;
+            const server = { id: docSnap.id, ...docSnap.data() } as Server;
+            return JSON.parse(JSON.stringify(server));
         }
         return null;
     } catch (error) {
@@ -227,20 +256,11 @@ export async function updateServerStatus(serverId: string, action: "start" | "st
         const serverRef = doc(db, "servers", serverId);
         let status: Server['status'] = 'Offline';
 
-        if (action === "start") status = 'Starting';
+        if (action === "start") status = 'Online';
         if (action === "stop") status = 'Offline';
-        if (action === "restart") status = 'Starting';
+        if (action === "restart") status = 'Online';
 
         await updateDoc(serverRef, { status });
-        
-        // In a real application, the node would report back when the server is online.
-        if (action === "start" || action === "restart") {
-            setTimeout(async () => {
-                await updateDoc(serverRef, { status: "Online" });
-                 revalidatePath(`/dashboard/panel`);
-                 revalidatePath(`/dashboard/panel/${serverId}`);
-            }, 1500);
-        }
 
         revalidatePath("/dashboard/panel");
         revalidatePath(`/dashboard/panel/${serverId}`);
@@ -303,7 +323,18 @@ export async function getUsers(): Promise<User[]> {
     if (!db) return [];
     try {
         const querySnapshot = await getDocs(collection(db, "users"));
-        const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        const users = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                name: data.name,
+                email: data.email,
+                avatar: data.avatar,
+                fallback: data.fallback,
+                role: data.role,
+                avatarHint: data.avatarHint,
+            } as User;
+        });
         
         // Ensure default admin user exists if none are found.
         if (users.length === 0) {
@@ -316,10 +347,11 @@ export async function getUsers(): Promise<User[]> {
                 avatarHint: "administrator portrait",
             };
             const docRef = await addDoc(collection(db, "users"), adminUser);
-            return [{ id: docRef.id, ...adminUser }];
+            const finalUsers = [{ id: docRef.id, ...adminUser }];
+            return JSON.parse(JSON.stringify(finalUsers));
         }
         
-        return users;
+        return JSON.parse(JSON.stringify(users));
     } catch (error) {
         console.error("Error fetching users: ", error);
         return [];
