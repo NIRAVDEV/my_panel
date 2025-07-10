@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
-import { useActionState } from "react-dom";
+import { useState, useTransition, useEffect, useActionState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
