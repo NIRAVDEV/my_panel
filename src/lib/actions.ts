@@ -332,9 +332,9 @@ export async function deleteServer(serverId: string) {
 
 // User Actions
 const userSchema = z.object({
+    name: z.string().min(1, "Name is required"),
     email: z.string().email("Invalid email address"),
-    // In a real app, password would have more validation
-    password: z.string().min(1, "Password is required"),
+    password: z.string().min(1, "Password is required").optional(),
     role: z.enum(["Admin", "User"]),
 });
 
@@ -354,13 +354,10 @@ export async function createUser(prevState: any, formData: FormData): Promise<Us
         return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
     }
 
-    const { email, role } = validatedFields.data;
-    const name = email.split('@')[0];
+    const { email, role, name } = validatedFields.data;
     const fallback = name.charAt(0).toUpperCase();
 
     try {
-        // In a real app, this would also create a user in Firebase Auth.
-        // For simplicity, we are only creating a document in Firestore.
         await addDoc(collection(db, "users"), {
             name: name,
             email: email,
@@ -376,6 +373,35 @@ export async function createUser(prevState: any, formData: FormData): Promise<Us
         return { success: false, error: "Failed to create user." };
     }
 }
+
+export async function updateUser(userId: string, prevState: any, formData: FormData): Promise<UserActionState> {
+    if (!db) return { success: false, error: "Firestore is not configured." };
+    
+    const validatedFields = userSchema.omit({ password: true }).safeParse(Object.fromEntries(formData.entries()));
+
+    if (!validatedFields.success) {
+        return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
+    }
+
+    const { email, role, name } = validatedFields.data;
+    const fallback = name.charAt(0).toUpperCase();
+
+    try {
+        const userRef = doc(db, "users", userId);
+        await updateDoc(userRef, {
+            name,
+            email,
+            role,
+            fallback,
+        });
+        revalidatePath("/dashboard/users");
+        return { success: true, error: null };
+    } catch (error) {
+        console.error("Error updating user:", error);
+        return { success: false, error: "Failed to update user." };
+    }
+}
+
 
 export async function getUsers(): Promise<User[]> {
     if (!db) return [];
@@ -394,7 +420,6 @@ export async function getUsers(): Promise<User[]> {
             } as User;
         });
         
-        // Ensure default admin user exists if none are found.
         if (users.length === 0) {
             const adminUser: Omit<User, 'id'> = {
                 name: "Admin",

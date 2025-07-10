@@ -34,4 +34,5 @@ export type User = {
   fallback: string;
   role: "Admin" | "User";
   avatarHint?: string;
+  password?: string;
 };

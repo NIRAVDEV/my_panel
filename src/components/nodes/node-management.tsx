@@ -127,8 +127,7 @@ function CreateNodeForm({ closeDialog }: { closeDialog: () => void }) {
 
 
 function EditNodeForm({ node, closeDialog }: { node: Node, closeDialog: () => void }) {
-    const updateNodeWithId = updateNode.bind(null, node.id);
-    const [state, formAction] = useActionState(updateNodeWithId, initialState);
+    const [state, formAction] = useActionState(updateNode.bind(null, node.id), initialState);
     const { toast } = useToast();
 
     useEffect(() => {
