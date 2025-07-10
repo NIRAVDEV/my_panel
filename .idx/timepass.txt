@@ -1,30 +1,27 @@
 { config, pkgs, ... }:
 
-let
-  # Define common locale settings for better readability
-  usLocaleSettings = {
-    LC_ADDRESS = "US";
-    LC_IDENTIFICATION = "US";
-    LC_MEASUREMENT = "US";
-    LC_MONETARY = "US";
-    LC_NAME = "US";
-    LC_NUMERIC = "US";
-    LC_PAPER = "US";
-    LC_TELEPHONE = "US";
-    LC_TIME = "US";
-  };
+# Define common locale settings for better readability
+usLocaleSettings = {
+  LC_ADDRESS = "US";
+  LC_IDENTIFICATION = "US";
+  LC_MEASUREMENT = "US";
+  LC_MONETARY = "US";
+  LC_NAME = "US";
+  LC_NUMERIC = "US";
+  LC_PAPER = "US";
+  LC_TELEPHONE = "US";
+  LC_TIME = "US";
+};
 
-  # Define Pterodactyl Wings variables for easier modification
-  wingsImage = "jexactyl/wings";
-  wingsContainerName = "wings";
-  wingsHttpPort = 8080;
-  wingsSftpPort = 2022;
-  wingsUid = 988;
-  wingsGid = 988;
-  wingsToken = "node-1";
-  wingsUrl = "https://6000-firebase-studio-1751979497038.cluster-bg6uurscprhn6qxr6xwtrhvkf6.cloudworkstations.dev";
-
-in
+# Define Pterodactyl Wings variables for easier modification
+wingsImage = "jexactyl/wings";
+wingsContainerName = "wings";
+wingsHttpPort = 8080;
+wingsSftpPort = 2022;
+wingsUid = 988;
+wingsGid = 988;
+wingsToken = "node-1";
+wingsUrl = "https://6000-firebase-studio-1751979497038.cluster-bg6uurscprhn6qxr6xwtrhvkf6.cloudworkstations.dev";
 {
   imports = []; # Consider adding common modules here if you have them
 

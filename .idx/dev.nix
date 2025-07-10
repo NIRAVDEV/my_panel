@@ -1,35 +1,35 @@
-{pkgs}:
+# This is /etc/nixos/configuration.nix or a similar NixOS module file.
+# It defines your system's configuration.
 
+{ pkgs }:
+
+# The entire system configuration is defined within this single attribute set { ... }
 {
 
-  ## System Package
-  packages = [
+
+
+  ## System Packages
+  # Define system-wide packages that should be installed
+   packages = [
     pkgs.nodejs_20
     pkgs.zulu
-    pkgs.sudo
     pkgs.bash
     pkgs.vim
     pkgs.wget
     pkgs.git
     pkgs.curl
     pkgs.tmux
+    pkgs.docker
+    pkgs.apt
+    pkgs.root
+    pkgs.sudo
   ];
-  # Integrated 'idx' configuration
-  # NOTE: The 'idx' attribute is specific to certain Nix-based development environments
-  # like Google Cloud Workstations. It's not a standard NixOS option.
-  # If you're running on plain NixOS, this section will cause an error unless you have
-  # a custom NixOS module defining 'config.idx'.
-  # If you intend to use this *within* a Firebase Studio/Workstation context,
-  # this file might be an 'overlay' or a specific configuration file they expect,
-  # not your primary /etc/nixos/configuration.nix.
-  # For a regular NixOS setup, you would typically manage VS Code extensions
-  # and workspace settings through other means (e.g., home-manager, or manually
-  # configuring VS Code after installation).
-  # I'm including it as-is, but be aware of its specific context.
+
+
   idx = {
     # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
     extensions = [
-      # "vscodevim.vim"
+      # "vscodevim.vim" # Uncomment to enable this extension
     ];
     workspace = {
       onCreate = {
@@ -49,4 +49,14 @@
       };
     };
   };
+
+  # Optional: Define your system state version.
+  # Replace "XX.YY" with your NixOS version (e.g., "24.05", "23.11").
+  # This helps ensure consistency when upgrading NixOS.
+  # You can find your current state version by running `cat /etc/nixos/configuration.nix`
+  # and looking for an existing `system.stateVersion` line.
+  # system.stateVersion = "XX.YY"; # Uncomment and set your version
+
+  # Optional: If you need to enable unfree packages (e.g., proprietary drivers)
+  # nixpkgs.config.allowUnfree = true;
 }
