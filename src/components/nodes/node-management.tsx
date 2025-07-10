@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect, useActionState } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -33,11 +33,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import type { Node } from "@/lib/types";
 
-const initialState = {
-    errors: {},
-    success: false,
-};
-
 export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [open, setOpen] = useState(false);
@@ -48,21 +43,27 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
   const [isPending, startTransition] = useTransition();
 
   const { toast } = useToast();
-  const [formState, formAction] = useActionState(createNode, initialState);
 
   useEffect(() => {
-    if (formState.success) {
+    setNodes(initialNodes);
+  }, [initialNodes]);
+  
+  const handleCreateNode = async (formData: FormData) => {
+    const result = await createNode(null, formData);
+    if (result?.success) {
       setOpen(false);
       toast({
         title: "Node Created",
         description: `Your new node has been created.`,
       });
+    } else {
+        toast({
+            title: "Error",
+            description: result?.error || "Failed to create node.",
+            variant: "destructive"
+        })
     }
-  }, [formState, toast]);
-
-  useEffect(() => {
-    setNodes(initialNodes);
-  }, [initialNodes]);
+  };
 
   const handleOpenGuide = async (node: Node) => {
     setSelectedNode(node);
@@ -127,7 +128,7 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
-            <form action={formAction}>
+            <form action={handleCreateNode}>
                 <DialogHeader>
                   <DialogTitle>Create New Node</DialogTitle>
                   <DialogDescription>
