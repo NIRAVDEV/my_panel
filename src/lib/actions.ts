@@ -72,6 +72,15 @@ export async function getNodeInstallerGuide(nodeId: string, panelUrl: string, os
 
 // Firestore CRUD Actions
 
+// Common Action State
+type ActionState = {
+    success: boolean;
+    error?: string | null;
+    errors?: {
+        [key: string]: string[] | undefined;
+    };
+};
+
 // Node Actions
 const nodeSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -87,15 +96,8 @@ const nodeSchema = z.object({
     path: ["portsEnd"],
 });
 
-type NodeActionState = {
-    success: boolean;
-    error: string | null;
-    errors?: {
-        [key: string]: string[] | undefined;
-    };
-};
 
-export async function createNode(prevState: any, formData: FormData): Promise<NodeActionState> {
+export async function createNode(formData: FormData): Promise<ActionState> {
     if (!db) return { success: false, error: "Firestore is not configured." };
 
     const validatedFields = nodeSchema.safeParse(Object.fromEntries(formData.entries()));
@@ -123,14 +125,14 @@ export async function createNode(prevState: any, formData: FormData): Promise<No
             status: "Offline",
         });
         revalidatePath("/dashboard/nodes");
-        return { success: true, error: null };
+        return { success: true };
     } catch (error) {
         console.error("Error creating node:", error);
         return { success: false, error: "Failed to create node." };
     }
 }
 
-export async function updateNode(nodeId: string, prevState: any, formData: FormData): Promise<NodeActionState> {
+export async function updateNode(nodeId: string, formData: FormData): Promise<ActionState> {
     if (!db) return { success: false, error: "Firestore is not configured." };
 
     const validatedFields = nodeSchema.safeParse(Object.fromEntries(formData.entries()));
@@ -157,7 +159,7 @@ export async function updateNode(nodeId: string, prevState: any, formData: FormD
             ports: { start: portsStart, end: portsEnd },
         });
         revalidatePath("/dashboard/nodes");
-        return { success: true, error: null };
+        return { success: true };
     } catch (error) {
         console.error("Error updating node:", error);
         return { success: false, error: "Failed to update node." };
@@ -224,15 +226,8 @@ const serverSchema = z.object({
     type: z.enum(["Vanilla", "Paper", "Spigot", "Purpur", "Forge", "Fabric", "BungeeCord"]),
 });
 
-type ServerActionState = {
-    success: boolean;
-    error: string | null;
-    errors?: {
-        [key: string]: string[] | undefined;
-    };
-};
 
-export async function createServer(prevState: any, formData: FormData): Promise<ServerActionState> {
+export async function createServer(formData: FormData): Promise<ActionState> {
     if (!db) return { success: false, error: "Firestore is not configured." };
     const validatedFields = serverSchema.safeParse(Object.fromEntries(formData.entries()));
 
@@ -253,7 +248,7 @@ export async function createServer(prevState: any, formData: FormData): Promise<
             players: { current: 0, max: 100 },
         });
         revalidatePath("/dashboard/panel");
-        return { success: true, error: null };
+        return { success: true };
     } catch (error) {
         console.error("Error creating server:", error);
         return { success: false, error: "Failed to create server." };
@@ -341,20 +336,9 @@ const createUserSchema = userSchemaBase.extend({
     password: z.string().min(1, "Password is required"),
 });
 
-const updateUserSchema = userSchemaBase.extend({
-    // Password can be optional during an update
-});
+const updateUserSchema = userSchemaBase;
 
-
-type UserActionState = {
-    success: boolean;
-    error: string | null;
-    errors?: {
-        [key: string]: string[] | undefined;
-    };
-};
-
-export async function createUser(prevState: any, formData: FormData): Promise<UserActionState> {
+export async function createUser(formData: FormData): Promise<ActionState> {
     if (!db) return { success: false, error: "Firestore is not configured." };
     const validatedFields = createUserSchema.safeParse(Object.fromEntries(formData.entries()));
 
@@ -375,14 +359,14 @@ export async function createUser(prevState: any, formData: FormData): Promise<Us
             avatarHint: "user portrait"
         });
         revalidatePath("/dashboard/users");
-        return { success: true, error: null };
+        return { success: true };
     } catch (error) {
         console.error("Error creating user: ", error);
         return { success: false, error: "Failed to create user." };
     }
 }
 
-export async function updateUser(userId: string, prevState: any, formData: FormData): Promise<UserActionState> {
+export async function updateUser(userId: string, formData: FormData): Promise<ActionState> {
     if (!db) return { success: false, error: "Firestore is not configured." };
     
     const validatedFields = updateUserSchema.safeParse(Object.fromEntries(formData.entries()));
@@ -403,7 +387,7 @@ export async function updateUser(userId: string, prevState: any, formData: FormD
             fallback,
         });
         revalidatePath("/dashboard/users");
-        return { success: true, error: null };
+        return { success: true };
     } catch (error) {
         console.error("Error updating user:", error);
         return { success: false, error: "Failed to update user." };
@@ -431,7 +415,7 @@ export async function getUsers(): Promise<User[]> {
         if (users.length === 0) {
             const adminUser: Omit<User, 'id'> = {
                 name: "Admin",
-                email: "admin@example.com",
+                email: "admin@jexactyl.pro",
                 avatar: "https://placehold.co/40x40.png",
                 fallback: "A",
                 role: "Admin",
@@ -452,6 +436,11 @@ export async function getUsers(): Promise<User[]> {
 export async function deleteUser(userId: string) {
     if (!db) return;
     try {
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists() && userDoc.data().email === 'admin@jexactyl.pro') {
+            console.error("Attempted to delete protected admin user.");
+            return;
+        }
         await deleteDoc(doc(db, "users", userId));
         revalidatePath("/dashboard/users");
     } catch (error) {

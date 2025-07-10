@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect, useActionState } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -39,63 +39,57 @@ import type { User } from "@/lib/types";
 import { createUser, deleteUser, updateUser } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 
-type UserActionState = {
-  success: boolean;
-  error: string | null;
-  errors?: {
-      [key: string]: string[] | undefined;
-  };
-};
-
-const initialState: UserActionState = {
-  success: false,
-  error: null,
-};
-
-function AddUserForm({ closeDialog }: { closeDialog: () => void }) {
-    const [state, formAction] = useActionState(createUser, initialState);
+function UserForm({ user, closeDialog }: { user?: User, closeDialog: () => void }) {
     const { toast } = useToast();
+    const [isPending, startTransition] = useTransition();
 
-    useEffect(() => {
-        if (state.success) {
-            toast({
-                title: "User Created",
-                description: "The new user account has been successfully created.",
-            });
-            closeDialog();
-        } else if (state.error && !state.errors) {
-            toast({
-                title: "Error",
-                description: state.error,
-                variant: "destructive"
-            });
-        }
-    }, [state, toast, closeDialog]);
+    const handleSubmit = (formData: FormData) => {
+        startTransition(async () => {
+            const action = user ? updateUser.bind(null, user.id) : createUser;
+            const result = await action(formData);
+
+            if (result.success) {
+                toast({
+                    title: user ? "User Updated" : "User Created",
+                    description: `The user has been successfully ${user ? 'updated' : 'created'}.`,
+                });
+                closeDialog();
+            } else if (result.error) {
+                toast({
+                    title: "Error",
+                    description: result.error,
+                    variant: "destructive"
+                });
+            }
+        });
+    };
 
     return (
-        <form action={formAction}>
+        <form action={handleSubmit}>
             <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
+            <DialogTitle>{user ? "Edit User" : "Add New User"}</DialogTitle>
             <DialogDescription>
-                Create a new user account and assign a role. Click save when you're done.
+                {user ? "Update the user's details." : "Create a new user account and assign a role."}
             </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="name" className="text-right">Name</Label>
-                  <Input id="name" name="name" className="col-span-3" placeholder="e.g., Steve" required />
+                  <Input id="name" name="name" className="col-span-3" placeholder="e.g., Steve" defaultValue={user?.name} required />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="email" className="text-right">Email</Label>
-                  <Input id="email" name="email" type="email" className="col-span-3" placeholder="user@example.com" required />
+                  <Input id="email" name="email" type="email" className="col-span-3" placeholder="user@example.com" defaultValue={user?.email} required />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="password" className="text-right">Password</Label>
-                  <Input id="password" name="password" type="password" className="col-span-3" required />
-              </div>
+              {!user && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="password" className="text-right">Password</Label>
+                    <Input id="password" name="password" type="password" className="col-span-3" required />
+                </div>
+              )}
               <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="role" className="text-right">Role</Label>
-                  <Select name="role" defaultValue="User">
+                  <Select name="role" defaultValue={user?.role || "User"}>
                   <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
@@ -110,67 +104,7 @@ function AddUserForm({ closeDialog }: { closeDialog: () => void }) {
                 <DialogClose asChild>
                     <Button type="button" variant="secondary">Cancel</Button>
                 </DialogClose>
-                <Button type="submit">Create User</Button>
-            </DialogFooter>
-        </form>
-    );
-}
-
-function EditUserForm({ user, closeDialog }: { user: User, closeDialog: () => void }) {
-    const [state, formAction] = useActionState(updateUser.bind(null, user.id), initialState);
-    const { toast } = useToast();
-
-    useEffect(() => {
-        if (state.success) {
-            toast({
-                title: "User Updated",
-                description: "The user has been successfully updated.",
-            });
-            closeDialog();
-        } else if (state.error && !state.errors) {
-            toast({
-                title: "Error",
-                description: state.error,
-                variant: "destructive"
-            });
-        }
-    }, [state, toast, closeDialog]);
-
-    return (
-        <form action={formAction}>
-            <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
-                Update the user's details.
-            </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">Name</Label>
-                    <Input id="name" name="name" className="col-span-3" defaultValue={user.name} required />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">Email</Label>
-                    <Input id="email" name="email" type="email" className="col-span-3" defaultValue={user.email} required />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="role" className="text-right">Role</Label>
-                    <Select name="role" defaultValue={user.role}>
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="User">User</SelectItem>
-                            <SelectItem value="Admin">Admin</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-            <DialogFooter>
-                <DialogClose asChild>
-                    <Button type="button" variant="secondary">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit" disabled={isPending}>{isPending ? "Saving..." : (user ? "Save Changes" : "Create User")}</Button>
             </DialogFooter>
         </form>
     );
@@ -178,9 +112,8 @@ function EditUserForm({ user, closeDialog }: { user: User, closeDialog: () => vo
 
 export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
   const [users, setUsers] = useState<User[]>(initialUsers);
-  const [isAddDialogOpen, setAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isDialogOpen, setDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
 
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -189,9 +122,9 @@ export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
     setUsers(initialUsers);
   }, [initialUsers]);
 
-  const handleOpenEditDialog = (user: User) => {
+  const handleOpenDialog = (user?: User) => {
     setSelectedUser(user);
-    setEditDialogOpen(true);
+    setDialogOpen(true);
   }
 
   const handleDelete = (userId: string) => {
@@ -208,26 +141,17 @@ export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
   return (
     <CardContent>
       <div className="flex justify-end mb-4">
-        <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <AddUserForm closeDialog={() => setAddDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => handleOpenDialog()}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add User
+        </Button>
       </div>
 
-      {selectedUser && (
-        <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
-            <DialogContent className="sm:max-w-lg">
-                <EditUserForm user={selectedUser} closeDialog={() => setEditDialogOpen(false)} />
-            </DialogContent>
-        </Dialog>
-      )}
+      <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+            <UserForm user={selectedUser} closeDialog={() => setDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
 
       <div className="rounded-md border">
         <Table>
@@ -268,14 +192,14 @@ export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleOpenEditDialog(user)}>
+                            <DropdownMenuItem onClick={() => handleOpenDialog(user)}>
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                                 className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
                                 onClick={() => handleDelete(user.id)}
-                                disabled={user.email === 'admin@example.com'}
+                                disabled={user.email === 'admin@jexactyl.pro'}
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete
