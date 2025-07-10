@@ -342,7 +342,7 @@ const createUserSchema = userSchemaBase.extend({
 });
 
 const updateUserSchema = userSchemaBase.extend({
-    password: z.string().optional(),
+    // Password can be optional during an update
 });
 
 
@@ -391,7 +391,7 @@ export async function updateUser(userId: string, prevState: any, formData: FormD
         return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
     }
 
-    const { email, role, name } = validatedFields.data;
+    const { name, email, role } = validatedFields.data;
     const fallback = name.charAt(0).toUpperCase();
 
     try {
