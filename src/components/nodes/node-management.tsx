@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect, useActionState } from "react";
+import { useState, useTransition, useEffect, useActionState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -24,54 +24,135 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, MoreHorizontal, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
+import { BookOpen, Edit, MoreHorizontal, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { createNode, getNodeInstallerGuide, updateNodeStatus, deleteNode } from "@/lib/actions";
+import { createNode, getNodeInstallerGuide, updateNodeStatus, deleteNode, updateNode } from "@/lib/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import type { Node } from "@/lib/types";
 
-const initialState = {
+type NodeActionState = {
+  success: boolean;
+  error: string | null;
+  errors?: {
+      [key: string]: string[] | undefined;
+  };
+};
+
+const initialState: NodeActionState = {
   success: false,
   error: null,
 };
 
-export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
-  const [nodes, setNodes] = useState<Node[]>(initialNodes);
-  const [open, setOpen] = useState(false);
-  const [guideDialogOpen, setGuideDialogOpen] = useState(false);
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-  const [guideContent, setGuideContent] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isPending, startTransition] = useTransition();
-
-  const [formState, formAction] = useActionState(createNode, initialState);
+function NodeForm({ node, closeDialog }: { node?: Node, closeDialog: () => void }) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const action = node ? updateNode.bind(null, node.id) : createNode;
+  const [formState, formAction] = useActionState(action, initialState);
   const { toast } = useToast();
 
   useEffect(() => {
-    setNodes(initialNodes);
-  }, [initialNodes]);
-
-  useEffect(() => {
     if (formState.success) {
-      setOpen(false);
       toast({
-        title: "Node Created",
-        description: `Your new node has been created.`,
+        title: node ? "Node Updated" : "Node Created",
+        description: `The node has been successfully ${node ? 'updated' : 'created'}.`,
       });
-    } else if (formState.error) {
+      closeDialog();
+    } else if (formState.error && !formState.errors) {
       toast({
         title: "Error",
         description: formState.error,
         variant: "destructive"
       });
     }
-  }, [formState, toast]);
+  }, [formState, toast, closeDialog, node]);
+
+  return (
+    <form ref={formRef} action={formAction}>
+        <DialogHeader>
+          <DialogTitle>{node ? 'Edit Node' : 'Create New Node'}</DialogTitle>
+          <DialogDescription>
+              {node ? 'Update the details for this node.' : 'Configure a new physical node to host servers.'}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">Name</Label>
+            <Input id="name" name="name" className="col-span-3" placeholder="e.g., US-West-1" defaultValue={node?.name} required />
+          </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="os" className="text-right">OS</Label>
+            <Select name="os" defaultValue={node?.os || "debian"}>
+                <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select an OS" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="debian">Debian / Ubuntu</SelectItem>
+                    <SelectItem value="nixos">NixOS</SelectItem>
+                </SelectContent>
+            </Select>
+            </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="location" className="text-right">Location</Label>
+            <Input id="location" name="location" className="col-span-3" placeholder="e.g., Los Angeles, CA" defaultValue={node?.location} required />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="fqdn" className="text-right">FQDN</Label>
+            <Input id="fqdn" name="fqdn" className="col-span-3" placeholder="e.g., node.example.com" defaultValue={node?.fqdn} required />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="memory" className="text-right">Memory (GB)</Label>
+            <Input id="memory" name="memory" type="number" className="col-span-3" placeholder="e.g., 64" defaultValue={node?.memory} required />
+          </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="disk" className="text-right">Disk (GB)</Label>
+            <Input id="disk" name="disk" type="number" className="col-span-3" placeholder="e.g., 500" defaultValue={node?.disk} required />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="portsStart" className="text-right">Port Range</Label>
+            <div className="col-span-3 grid grid-cols-2 gap-2">
+                <Input id="portsStart" name="portsStart" type="number" placeholder="e.g., 25565" defaultValue={node?.ports.start} required />
+                <Input id="portsEnd" name="portsEnd" type="number" placeholder="e.g., 25575" defaultValue={node?.ports.end} required />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="secondary">Cancel</Button>
+            </DialogClose>
+            <Button type="submit">{node ? 'Save Changes' : 'Create Node'}</Button>
+        </DialogFooter>
+    </form>
+  )
+}
+
+export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
+  const [nodes, setNodes] = useState<Node[]>(initialNodes);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  const [guideDialogOpen, setGuideDialogOpen] = useState(false);
+  const [guideNode, setGuideNode] = useState<Node | null>(null);
+  const [guideContent, setGuideContent] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  const { toast } = useToast();
+
+  useEffect(() => {
+    setNodes(initialNodes);
+  }, [initialNodes]);
+  
+  const handleOpenDialog = (node: Node | null = null) => {
+    setSelectedNode(node);
+    setIsEditing(!!node);
+    setDialogOpen(true);
+  }
 
   const handleOpenGuide = async (node: Node) => {
-    setSelectedNode(node);
+    setGuideNode(node);
     setGuideDialogOpen(true);
     setIsGenerating(true);
     setGuideContent(null);
@@ -125,69 +206,15 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
   return (
     <CardContent>
       <div className="flex justify-end mb-4">
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => handleOpenDialog()}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Create Node
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
-            <form action={formAction}>
-                <DialogHeader>
-                  <DialogTitle>Create New Node</DialogTitle>
-                  <DialogDescription>
-                      Configure a new physical node to host servers.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">Name</Label>
-                    <Input id="name" name="name" className="col-span-3" placeholder="e.g., US-West-1" required />
-                  </div>
-                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="os" className="text-right">OS</Label>
-                    <Select name="os" defaultValue="debian">
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder="Select an OS" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="debian">Debian / Ubuntu</SelectItem>
-                            <SelectItem value="nixos">NixOS</SelectItem>
-                        </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="location" className="text-right">Location</Label>
-                    <Input id="location" name="location" className="col-span-3" placeholder="e.g., Los Angeles, CA" required />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="fqdn" className="text-right">FQDN</Label>
-                    <Input id="fqdn" name="fqdn" className="col-span-3" placeholder="e.g., node.example.com" required />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="memory" className="text-right">Memory (GB)</Label>
-                    <Input id="memory" name="memory" type="number" defaultValue="32" className="col-span-3" placeholder="e.g., 64" required />
-                  </div>
-                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="disk" className="text-right">Disk (GB)</Label>
-                    <Input id="disk" name="disk" type="number" defaultValue="250" className="col-span-3" placeholder="e.g., 500" required />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="ports" className="text-right">Port Range</Label>
-                    <div className="col-span-3 grid grid-cols-2 gap-2">
-                        <Input id="portsStart" name="portsStart" type="number" defaultValue="25565" placeholder="e.g., 25565" required />
-                        <Input id="portsEnd" name="portsEnd" type="number" defaultValue="25575" placeholder="e.g., 25575" required />
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button type="button" variant="secondary">Cancel</Button>
-                    </DialogClose>
-                    <Button type="submit">Create Node</Button>
-                </DialogFooter>
-            </form>
+            <NodeForm node={isEditing ? selectedNode! : undefined} closeDialog={() => setDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
@@ -226,6 +253,10 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleOpenDialog(node)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleCheckStatus(node)}>
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Check Status
@@ -256,9 +287,9 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
       <Dialog open={guideDialogOpen} onOpenChange={setGuideDialogOpen}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Installation Guide for {selectedNode?.name}</DialogTitle>
+            <DialogTitle>Installation Guide for {guideNode?.name}</DialogTitle>
             <DialogDescription>
-              Follow these steps on your new {selectedNode?.os === 'nixos' ? 'NixOS' : 'Debian/Ubuntu'} VPS to configure it as a server node.
+              Follow these steps on your new {guideNode?.os === 'nixos' ? 'NixOS' : 'Debian/Ubuntu'} VPS to configure it as a server node.
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-md border p-4 h-[60vh] overflow-y-auto bg-muted">

@@ -87,13 +87,23 @@ const nodeSchema = z.object({
     path: ["portsEnd"],
 });
 
-export async function createNode(prevState: any, formData: FormData) {
-    if (!db) return { error: "Firestore is not configured." };
+type NodeActionState = {
+    success: boolean;
+    error: string | null;
+    errors?: {
+        [key: string]: string[] | undefined;
+    };
+};
+
+export async function createNode(prevState: any, formData: FormData): Promise<NodeActionState> {
+    if (!db) return { success: false, error: "Firestore is not configured." };
 
     const validatedFields = nodeSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
         return {
+            success: false,
+            error: "Invalid fields.",
             errors: validatedFields.error.flatten().fieldErrors,
         };
     }
@@ -113,10 +123,44 @@ export async function createNode(prevState: any, formData: FormData) {
             status: "Offline",
         });
         revalidatePath("/dashboard/nodes");
-        return { success: true };
+        return { success: true, error: null };
     } catch (error) {
         console.error("Error creating node:", error);
-        return { error: "Failed to create node." };
+        return { success: false, error: "Failed to create node." };
+    }
+}
+
+export async function updateNode(nodeId: string, prevState: any, formData: FormData): Promise<NodeActionState> {
+    if (!db) return { success: false, error: "Firestore is not configured." };
+
+    const validatedFields = nodeSchema.safeParse(Object.fromEntries(formData.entries()));
+
+    if (!validatedFields.success) {
+        return {
+            success: false,
+            error: "Invalid fields.",
+            errors: validatedFields.error.flatten().fieldErrors,
+        };
+    }
+
+    const { name, location, fqdn, memory, disk, os, portsStart, portsEnd } = validatedFields.data;
+
+    try {
+        const nodeRef = doc(db, "nodes", nodeId);
+        await updateDoc(nodeRef, {
+            name,
+            location,
+            fqdn,
+            memory,
+            disk,
+            os,
+            ports: { start: portsStart, end: portsEnd },
+        });
+        revalidatePath("/dashboard/nodes");
+        return { success: true, error: null };
+    } catch (error) {
+        console.error("Error updating node:", error);
+        return { success: false, error: "Failed to update node." };
     }
 }
 
@@ -180,20 +224,26 @@ const serverSchema = z.object({
     type: z.enum(["Vanilla", "Paper", "Spigot", "Purpur", "Forge", "Fabric", "BungeeCord"]),
 });
 
-export async function createServer(prevState: any, formData: FormData) {
-    if (!db) return { error: "Firestore is not configured." };
+type ServerActionState = {
+    success: boolean;
+    error: string | null;
+    errors?: {
+        [key: string]: string[] | undefined;
+    };
+};
+
+export async function createServer(prevState: any, formData: FormData): Promise<ServerActionState> {
+    if (!db) return { success: false, error: "Firestore is not configured." };
     const validatedFields = serverSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
-        return { errors: validatedFields.error.flatten().fieldErrors };
+        return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
     }
     
     const { name, ram, storage, version, type } = validatedFields.data;
 
     try {
-        const newServerId = name.toLowerCase().replace(/\s+/g, '-');
         await addDoc(collection(db, "servers"), {
-            id: newServerId, // This is for URL generation, might not be unique.
             name,
             ram,
             storage,
@@ -203,10 +253,10 @@ export async function createServer(prevState: any, formData: FormData) {
             players: { current: 0, max: 100 },
         });
         revalidatePath("/dashboard/panel");
-        return { success: true };
+        return { success: true, error: null };
     } catch (error) {
         console.error("Error creating server:", error);
-        return { error: "Failed to create server." };
+        return { success: false, error: "Failed to create server." };
     }
 }
 
@@ -288,12 +338,20 @@ const userSchema = z.object({
     role: z.enum(["Admin", "User"]),
 });
 
-export async function createUser(prevState: any, formData: FormData) {
-    if (!db) return { error: "Firestore is not configured." };
+type UserActionState = {
+    success: boolean;
+    error: string | null;
+    errors?: {
+        [key: string]: string[] | undefined;
+    };
+};
+
+export async function createUser(prevState: any, formData: FormData): Promise<UserActionState> {
+    if (!db) return { success: false, error: "Firestore is not configured." };
     const validatedFields = userSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
-        return { errors: validatedFields.error.flatten().fieldErrors };
+        return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
     }
 
     const { email, role } = validatedFields.data;
@@ -312,10 +370,10 @@ export async function createUser(prevState: any, formData: FormData) {
             avatarHint: "user portrait"
         });
         revalidatePath("/dashboard/users");
-        return { success: true };
+        return { success: true, error: null };
     } catch (error) {
         console.error("Error creating user: ", error);
-        return { error: "Failed to create user." };
+        return { success: false, error: "Failed to create user." };
     }
 }
 
