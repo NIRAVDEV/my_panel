@@ -1,0 +1,8 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyDkyo_fL5xwL0PlReBsvRUeF-tshIiuSvc",
+  authDomain: "jexactylmc.firebaseapp.com",
+  projectId: "jexactylmc",
+  storageBucket: "jexactylmc.firebasestorage.app",
+  messagingSenderId: "749076725662",
+  appId: "1:749076725662:web:18f13d31592d7834a0a08f"
+};
