@@ -37,7 +37,7 @@ import { MoreHorizontal, Play, PlusCircle, RefreshCw, SlidersHorizontal, Square,
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import type { Server } from "@/lib/types";
-import { createServer, updateServerStatus, deleteServer } from "@/lib/actions";
+import { createServer, updateServerStatus, deleteServer } from "@/jexactylmc/actions";
 
 
 function CreateServerForm({ closeDialog }: { closeDialog: () => void }) {

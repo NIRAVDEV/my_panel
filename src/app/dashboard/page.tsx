@@ -5,7 +5,7 @@ import { HardDrive, Cpu, Users, Clock, ArrowRight, PlusCircle, Server } from "lu
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getServers, getUsers } from "@/lib/actions";
+import { getServers, getUsers } from "@/jexactylmc/actions";
 
 export default async function DashboardPage() {
   const servers = await getServers();

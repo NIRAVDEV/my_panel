@@ -1,7 +1,7 @@
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NodeManagement } from "@/components/nodes/node-management";
-import { getNodes } from "@/lib/actions";
+import { getNodes } from "@/jexactylmc/actions";
 
 export default async function NodesPage() {
   const initialNodes = await getNodes();

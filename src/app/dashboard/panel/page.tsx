@@ -1,7 +1,7 @@
 
 import { ServerList } from "@/components/panel/server-list";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getServers } from "@/lib/actions";
+import { getServers } from "@/jexactylmc/actions";
 
 export default async function PanelPage() {
   const initialServers = await getServers();

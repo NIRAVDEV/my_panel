@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { getAIGuide } from "@/lib/actions";
+import { getAIGuide } from "@/jexactylmc/actions";
 import { CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { List, Sparkles, Terminal } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 
-const initialState: { steps?: string[]; error?: string } = {
+type GuideState = {
+  steps?: string[];
+  error?: string;
+};
+
+const initialState: GuideState = {
   steps: undefined,
   error: undefined,
 };
@@ -32,7 +37,7 @@ function SubmitButton() {
   );
 }
 
-function FormContent({ state }: { state: typeof initialState }) {
+function FormContent({ state }: { state: GuideState }) {
   const { pending } = useFormStatus();
 
   return (

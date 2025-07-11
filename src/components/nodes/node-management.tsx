@@ -27,7 +27,7 @@ import { Label } from "@/components/ui/label";
 import { BookOpen, Edit, MoreHorizontal, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { createNode, getNodeInstallerGuide, updateNodeStatus, deleteNode, updateNode } from "@/lib/actions";
+import { createNode, getNodeInstallerGuide, updateNodeStatus, deleteNode, updateNode } from "@/jexactylmc/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";

@@ -2,18 +2,6 @@
 import { getApp, getApps, initializeApp, type FirebaseOptions } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
-// To resolve the "5 NOT_FOUND" error, please ensure the following:
-// 1. You have created a Firestore database in your Firebase project.
-//    - Go to the Firebase Console: https://console.firebase.google.com/
-//    - Select your project ("jexactylmc").
-//    - In the left menu, go to "Build" > "Firestore Database".
-//    - Click "Create database" and follow the setup steps.
-//
-// 2. Your Firestore security rules allow access.
-//    - In the Firestore Database section of the console, go to the "Rules" tab.
-//    - A basic set of rules has been added to `firestore.rules` in your project root.
-//    - Copy the content of `firestore.rules` and paste it into the editor in the "Rules" tab, then click "Publish".
-
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,

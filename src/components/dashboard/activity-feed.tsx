@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { summarizeActivity } from "@/lib/actions";
+import { summarizeActivity } from "@/jexactylmc/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Bot, Sparkles } from "lucide-react";
 

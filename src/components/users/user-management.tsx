@@ -36,7 +36,7 @@ import {
 import { Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { User } from "@/lib/types";
-import { createUser, deleteUser, updateUser } from "@/lib/actions";
+import { createUser, deleteUser, updateUser } from "@/jexactylmc/actions";
 import { useToast } from "@/hooks/use-toast";
 
 function UserForm({ user, closeDialog }: { user?: User, closeDialog: () => void }) {

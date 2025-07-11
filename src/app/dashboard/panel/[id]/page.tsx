@@ -1,6 +1,6 @@
 
 
-import { getServerById } from "@/lib/actions";
+import { getServerById } from "@/jexactylmc/actions";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Cpu, HardDrive, Users } from "lucide-react";

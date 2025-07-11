@@ -1,6 +1,6 @@
 
 
-import { getServerById, updateServerStatus } from "@/lib/actions";
+import { getServerById, updateServerStatus } from "@/jexactylmc/actions";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";

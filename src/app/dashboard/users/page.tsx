@@ -1,7 +1,7 @@
 
 import { UserManagement } from "@/components/users/user-management";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getUsers } from "@/lib/actions";
+import { getUsers } from "@/jexactylmc/actions";
 
 export default async function UsersPage() {
   const initialUsers = await getUsers();
