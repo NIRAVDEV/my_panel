@@ -35,13 +35,13 @@ import type { Node } from "@/lib/types";
 
 function NodeForm({ node, closeDialog }: { node?: Node, closeDialog: () => void }) {
     const { toast } = useToast();
-    const formRef = useRef<HTMLFormElement>(null);
     const [isPending, startTransition] = useTransition();
 
-    const handleSubmit = (formData: FormData) => {
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
         startTransition(async () => {
-            const action = node ? updateNode.bind(null, node.id) : createNode;
-            const result = await action(formData);
+            const result = node ? await updateNode(node.id, formData) : await createNode(formData);
 
             if (result.success) {
                 toast({
@@ -60,7 +60,7 @@ function NodeForm({ node, closeDialog }: { node?: Node, closeDialog: () => void 
     };
     
     return (
-        <form ref={formRef} action={handleSubmit}>
+        <form onSubmit={handleSubmit}>
             <DialogHeader>
               <DialogTitle>{node ? "Edit Node" : "Create New Node"}</DialogTitle>
               <DialogDescription>

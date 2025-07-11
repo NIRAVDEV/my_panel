@@ -43,10 +43,11 @@ function UserForm({ user, closeDialog }: { user?: User, closeDialog: () => void 
     const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
 
-    const handleSubmit = (formData: FormData) => {
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
         startTransition(async () => {
-            const action = user ? updateUser.bind(null, user.id) : createUser;
-            const result = await action(formData);
+            const result = user ? await updateUser(user.id, formData) : await createUser(formData);
 
             if (result.success) {
                 toast({
@@ -65,7 +66,7 @@ function UserForm({ user, closeDialog }: { user?: User, closeDialog: () => void 
     };
 
     return (
-        <form action={handleSubmit}>
+        <form onSubmit={handleSubmit}>
             <DialogHeader>
             <DialogTitle>{user ? "Edit User" : "Add New User"}</DialogTitle>
             <DialogDescription>

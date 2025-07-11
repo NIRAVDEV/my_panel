@@ -44,7 +44,9 @@ function CreateServerForm({ closeDialog }: { closeDialog: () => void }) {
     const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
 
-    const handleSubmit = (formData: FormData) => {
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
         startTransition(async () => {
             const result = await createServer(formData);
             if (result.success) {
@@ -64,7 +66,7 @@ function CreateServerForm({ closeDialog }: { closeDialog: () => void }) {
     };
 
     return (
-        <form action={handleSubmit}>
+        <form onSubmit={handleSubmit}>
             <DialogHeader>
               <DialogTitle>Create New Server</DialogTitle>
               <DialogDescription>
