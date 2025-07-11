@@ -3,8 +3,8 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { db } from "./firebase";
-import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import clientPromise from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 
 import { generateServerGuide } from "@/ai/flows/generate-server-guide";
 import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
@@ -70,7 +70,11 @@ export async function getNodeInstallerGuide(nodeId: string, panelUrl: string, os
     }
 }
 
-// Firestore CRUD Actions
+// MongoDB Helper
+async function getDb() {
+    const client = await clientPromise;
+    return client.db();
+}
 
 // Common Action State
 type ActionState = {
@@ -98,8 +102,6 @@ const nodeSchema = z.object({
 
 
 export async function createNode(formData: FormData): Promise<ActionState> {
-    if (!db) return { success: false, error: "Firestore is not configured." };
-
     const validatedFields = nodeSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -113,7 +115,8 @@ export async function createNode(formData: FormData): Promise<ActionState> {
     const { name, location, fqdn, memory, disk, os, portsStart, portsEnd } = validatedFields.data;
 
     try {
-        await addDoc(collection(db, "nodes"), {
+        const db = await getDb();
+        await db.collection("nodes").insertOne({
             name,
             location,
             fqdn,
@@ -133,8 +136,6 @@ export async function createNode(formData: FormData): Promise<ActionState> {
 }
 
 export async function updateNode(nodeId: string, formData: FormData): Promise<ActionState> {
-    if (!db) return { success: false, error: "Firestore is not configured." };
-    
     const validatedFields = nodeSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -148,16 +149,21 @@ export async function updateNode(nodeId: string, formData: FormData): Promise<Ac
     const { name, location, fqdn, memory, disk, os, portsStart, portsEnd } = validatedFields.data;
 
     try {
-        const nodeRef = doc(db, "nodes", nodeId);
-        await updateDoc(nodeRef, {
-            name,
-            location,
-            fqdn,
-            memory,
-            disk,
-            os,
-            ports: { start: portsStart, end: portsEnd },
-        });
+        const db = await getDb();
+        await db.collection("nodes").updateOne(
+            { _id: new ObjectId(nodeId) },
+            {
+                $set: {
+                    name,
+                    location,
+                    fqdn,
+                    memory,
+                    disk,
+                    os,
+                    ports: { start: portsStart, end: portsEnd },
+                }
+            }
+        );
         revalidatePath("/dashboard/nodes");
         return { success: true };
     } catch (error) {
@@ -167,25 +173,10 @@ export async function updateNode(nodeId: string, formData: FormData): Promise<Ac
 }
 
 export async function getNodes(): Promise<Node[]> {
-    if (!db) return [];
     try {
-        const querySnapshot = await getDocs(collection(db, "nodes"));
-        const nodes = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                name: data.name,
-                location: data.location,
-                fqdn: data.fqdn,
-                memory: data.memory,
-                disk: data.disk,
-                ports: data.ports,
-                servers: data.servers,
-                os: data.os,
-                status: data.status,
-            } as Node;
-        });
-        return JSON.parse(JSON.stringify(nodes));
+        const db = await getDb();
+        const nodes = await db.collection("nodes").find({}).toArray();
+        return JSON.parse(JSON.stringify(nodes.map(node => ({ ...node, id: node._id.toString() }))));
     } catch (error) {
         console.error("Error fetching nodes: ", error);
         return [];
@@ -193,23 +184,22 @@ export async function getNodes(): Promise<Node[]> {
 }
 
 export async function updateNodeStatus(nodeId: string, currentStatus: "Online" | "Offline") {
-    if (!db) return { error: "Firestore is not configured." };
     try {
-        const nodeRef = doc(db, "nodes", nodeId);
+        const db = await getDb();
         const newStatus = currentStatus === 'Offline' ? 'Online' : 'Offline';
-        await updateDoc(nodeRef, { status: newStatus });
+        await db.collection("nodes").updateOne({ _id: new ObjectId(nodeId) }, { $set: { status: newStatus } });
         revalidatePath("/dashboard/nodes");
         return { success: true, newStatus };
     } catch (error) {
         console.error("Error updating node status: ", error);
-        return { error: "Failed to update status." };
+        return { success: false, error: "Failed to update status." };
     }
 }
 
 export async function deleteNode(nodeId: string): Promise<ActionState> {
-    if (!db) return { success: false, error: "Firestore is not configured." };
     try {
-        await deleteDoc(doc(db, "nodes", nodeId));
+        const db = await getDb();
+        await db.collection("nodes").deleteOne({ _id: new ObjectId(nodeId) });
         revalidatePath("/dashboard/nodes");
         return { success: true };
     } catch (error) {
@@ -230,7 +220,6 @@ const serverSchema = z.object({
 
 
 export async function createServer(formData: FormData): Promise<ActionState> {
-    if (!db) return { success: false, error: "Firestore is not configured." };
     const validatedFields = serverSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -240,7 +229,8 @@ export async function createServer(formData: FormData): Promise<ActionState> {
     const { name, ram, storage, version, type } = validatedFields.data;
 
     try {
-        await addDoc(collection(db, "servers"), {
+        const db = await getDb();
+        await db.collection("servers").insertOne({
             name,
             ram,
             storage,
@@ -258,23 +248,10 @@ export async function createServer(formData: FormData): Promise<ActionState> {
 }
 
 export async function getServers(): Promise<Server[]> {
-    if (!db) return [];
     try {
-        const querySnapshot = await getDocs(collection(db, "servers"));
-        const servers = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                name: data.name,
-                status: data.status,
-                players: data.players,
-                version: data.version,
-                ram: data.ram,
-                storage: data.storage,
-                type: data.type,
-            } as Server;
-        });
-        return JSON.parse(JSON.stringify(servers));
+        const db = await getDb();
+        const servers = await db.collection("servers").find({}).toArray();
+        return JSON.parse(JSON.stringify(servers.map(server => ({ ...server, id: server._id.toString() }))));
     } catch (error) {
         console.error("Error fetching servers: ", error);
         return [];
@@ -282,13 +259,11 @@ export async function getServers(): Promise<Server[]> {
 }
 
 export async function getServerById(id: string): Promise<Server | null> {
-    if (!db) return null;
     try {
-        const docRef = doc(db, "servers", id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const server = { id: docSnap.id, ...docSnap.data() } as Server;
-            return JSON.parse(JSON.stringify(server));
+        const db = await getDb();
+        const server = await db.collection("servers").findOne({ _id: new ObjectId(id) });
+        if (server) {
+            return JSON.parse(JSON.stringify({ ...server, id: server._id.toString() }));
         }
         return null;
     } catch (error) {
@@ -298,28 +273,29 @@ export async function getServerById(id: string): Promise<Server | null> {
 }
 
 export async function updateServerStatus(serverId: string, action: "start" | "stop" | "restart") {
-    if (!db) return;
     try {
-        const serverRef = doc(db, "servers", serverId);
+        const db = await getDb();
         let status: Server['status'] = 'Offline';
 
         if (action === "start") status = 'Online';
         if (action === "stop") status = 'Offline';
         if (action === "restart") status = 'Online';
 
-        await updateDoc(serverRef, { status });
+        await db.collection("servers").updateOne({ _id: new ObjectId(serverId) }, { $set: { status } });
 
         revalidatePath("/dashboard/panel");
         revalidatePath(`/dashboard/panel/${serverId}`);
+        return { success: true };
     } catch (error) {
         console.error("Error updating server status: ", error);
+        return { success: false, error: "Failed to update server status." };
     }
 }
 
 export async function deleteServer(serverId: string): Promise<ActionState> {
-    if (!db) return { success: false, error: "Firestore is not configured." };
     try {
-        await deleteDoc(doc(db, "servers", serverId));
+        const db = await getDb();
+        await db.collection("servers").deleteOne({ _id: new ObjectId(serverId) });
         revalidatePath("/dashboard/panel");
         return { success: true };
     } catch (error) {
@@ -343,7 +319,6 @@ const createUserSchema = userSchemaBase.extend({
 const updateUserSchema = userSchemaBase;
 
 export async function createUser(formData: FormData): Promise<ActionState> {
-    if (!db) return { success: false, error: "Firestore is not configured." };
     const validatedFields = createUserSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -354,7 +329,8 @@ export async function createUser(formData: FormData): Promise<ActionState> {
     const fallback = name.charAt(0).toUpperCase();
 
     try {
-        await addDoc(collection(db, "users"), {
+        const db = await getDb();
+        await db.collection("users").insertOne({
             name: name,
             email: email,
             role: role,
@@ -371,8 +347,6 @@ export async function createUser(formData: FormData): Promise<ActionState> {
 }
 
 export async function updateUser(userId: string, formData: FormData): Promise<ActionState> {
-    if (!db) return { success: false, error: "Firestore is not configured." };
-    
     const validatedFields = updateUserSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -383,13 +357,18 @@ export async function updateUser(userId: string, formData: FormData): Promise<Ac
     const fallback = name.charAt(0).toUpperCase();
 
     try {
-        const userRef = doc(db, "users", userId);
-        await updateDoc(userRef, {
-            name,
-            email,
-            role,
-            fallback,
-        });
+        const db = await getDb();
+        await db.collection("users").updateOne(
+            { _id: new ObjectId(userId) },
+            {
+                $set: {
+                    name,
+                    email,
+                    role,
+                    fallback,
+                }
+            }
+        );
         revalidatePath("/dashboard/users");
         return { success: true };
     } catch (error) {
@@ -400,21 +379,10 @@ export async function updateUser(userId: string, formData: FormData): Promise<Ac
 
 
 export async function getUsers(): Promise<User[]> {
-    if (!db) return [];
     try {
-        const querySnapshot = await getDocs(collection(db, "users"));
-        const users = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                name: data.name,
-                email: data.email,
-                avatar: data.avatar,
-                fallback: data.fallback,
-                role: data.role,
-                avatarHint: data.avatarHint,
-            } as User;
-        });
+        const db = await getDb();
+        const usersCollection = db.collection("users");
+        const users = await usersCollection.find({}).toArray();
         
         if (users.length === 0) {
             const adminUser: Omit<User, 'id'> = {
@@ -425,12 +393,12 @@ export async function getUsers(): Promise<User[]> {
                 role: "Admin",
                 avatarHint: "administrator portrait",
             };
-            const docRef = await addDoc(collection(db, "users"), adminUser);
-            const finalUsers = [{ id: docRef.id, ...adminUser }];
+            const result = await usersCollection.insertOne(adminUser);
+            const finalUsers = [{ ...adminUser, id: result.insertedId.toString() }];
             return JSON.parse(JSON.stringify(finalUsers));
         }
         
-        return JSON.parse(JSON.stringify(users));
+        return JSON.parse(JSON.stringify(users.map(user => ({ ...user, id: user._id.toString() }))));
     } catch (error) {
         console.error("Error fetching users: ", error);
         return [];
@@ -438,14 +406,14 @@ export async function getUsers(): Promise<User[]> {
 }
 
 export async function deleteUser(userId: string): Promise<ActionState> {
-    if (!db) return { success: false, error: "Firestore is not configured." };
     try {
-        const userDoc = await getDoc(doc(db, "users", userId));
-        if (userDoc.exists() && userDoc.data().email === 'admin@jexactyl.pro') {
+        const db = await getDb();
+        const userDoc = await db.collection("users").findOne({ _id: new ObjectId(userId) });
+        if (userDoc && userDoc.email === 'admin@jexactyl.pro') {
             console.error("Attempted to delete protected admin user.");
             return { success: false, error: "Cannot delete the default admin user." };
         }
-        await deleteDoc(doc(db, "users", userId));
+        await db.collection("users").deleteOne({ _id: new ObjectId(userId) });
         revalidatePath("/dashboard/users");
         return { success: true };
     } catch (error) {

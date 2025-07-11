@@ -27,7 +27,7 @@ export type Node = {
 };
 
 export type User = {
-  id: string; // Document ID from Firestore
+  id: string; // Document ID from MongoDB
   name: string;
   email: string;
   avatar: string;
