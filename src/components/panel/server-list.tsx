@@ -151,12 +151,20 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
 
   const handleDelete = (serverId: string) => {
     startTransition(async () => {
-      await deleteServer(serverId);
-      toast({
-        title: "Server Deleted",
-        description: "The server has been successfully deleted.",
-        variant: "destructive"
-      });
+      const result = await deleteServer(serverId);
+      if (result.success) {
+        toast({
+            title: "Server Deleted",
+            description: "The server has been successfully deleted.",
+            variant: "destructive"
+        });
+      } else if (result.error) {
+        toast({
+            title: "Error Deleting Server",
+            description: result.error,
+            variant: "destructive"
+        });
+      }
     });
   }
 

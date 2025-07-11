@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { db } from "../../jexactylmc/firebase";
+import { db } from "./firebase";
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 import { generateServerGuide } from "@/ai/flows/generate-server-guide";
@@ -206,13 +206,15 @@ export async function updateNodeStatus(nodeId: string, currentStatus: "Online" |
     }
 }
 
-export async function deleteNode(nodeId: string) {
-    if (!db) return;
+export async function deleteNode(nodeId: string): Promise<ActionState> {
+    if (!db) return { success: false, error: "Firestore is not configured." };
     try {
         await deleteDoc(doc(db, "nodes", nodeId));
         revalidatePath("/dashboard/nodes");
+        return { success: true };
     } catch (error) {
         console.error("Error deleting node: ", error);
+        return { success: false, error: "Failed to delete node." };
     }
 }
 
@@ -314,13 +316,15 @@ export async function updateServerStatus(serverId: string, action: "start" | "st
     }
 }
 
-export async function deleteServer(serverId: string) {
-    if (!db) return;
+export async function deleteServer(serverId: string): Promise<ActionState> {
+    if (!db) return { success: false, error: "Firestore is not configured." };
     try {
         await deleteDoc(doc(db, "servers", serverId));
         revalidatePath("/dashboard/panel");
+        return { success: true };
     } catch (error) {
         console.error("Error deleting server: ", error);
+        return { success: false, error: "Failed to delete server." };
     }
 }
 
@@ -433,17 +437,19 @@ export async function getUsers(): Promise<User[]> {
     }
 }
 
-export async function deleteUser(userId: string) {
-    if (!db) return;
+export async function deleteUser(userId: string): Promise<ActionState> {
+    if (!db) return { success: false, error: "Firestore is not configured." };
     try {
         const userDoc = await getDoc(doc(db, "users", userId));
         if (userDoc.exists() && userDoc.data().email === 'admin@jexactyl.pro') {
             console.error("Attempted to delete protected admin user.");
-            return;
+            return { success: false, error: "Cannot delete the default admin user." };
         }
         await deleteDoc(doc(db, "users", userId));
         revalidatePath("/dashboard/users");
+        return { success: true };
     } catch (error) {
         console.error("Error deleting user: ", error);
+        return { success: false, error: "Failed to delete user." };
     }
 }

@@ -177,12 +177,20 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
 
   const handleDelete = (nodeId: string) => {
     startTransition(async () => {
-        await deleteNode(nodeId);
-        toast({
-            title: "Node Deleted",
-            description: "The node has been successfully deleted.",
-            variant: "destructive"
-        });
+        const result = await deleteNode(nodeId);
+        if (result.success) {
+            toast({
+                title: "Node Deleted",
+                description: "The node has been successfully deleted.",
+                variant: "destructive"
+            });
+        } else if (result.error) {
+            toast({
+                title: "Error Deleting Node",
+                description: result.error,
+                variant: "destructive"
+            });
+        }
     });
   }
 

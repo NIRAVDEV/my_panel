@@ -129,12 +129,20 @@ export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
 
   const handleDelete = (userId: string) => {
     startTransition(async () => {
-      await deleteUser(userId);
-      toast({
-          title: "User Deleted",
-          description: "The user has been successfully deleted.",
-          variant: "destructive"
-      });
+      const result = await deleteUser(userId);
+      if (result.success) {
+          toast({
+              title: "User Deleted",
+              description: "The user has been successfully deleted.",
+              variant: "destructive"
+          });
+      } else if (result.error) {
+          toast({
+              title: "Error Deleting User",
+              description: result.error,
+              variant: "destructive"
+          });
+      }
     });
   }
 
