@@ -5,15 +5,17 @@ import { getFirestore } from 'firebase/firestore';
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  // Use the public variable on the client and the server-side variable on the server.
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 function initializeFirebase() {
-  if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('YOUR_')) {
-    console.error("Firebase projectId is not set correctly. Please update your .env file with the NEXT_PUBLIC_ prefix.");
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+  if (!projectId || projectId.includes('YOUR_')) {
+    console.error("Firebase projectId is not set correctly. Please update your .env file.");
     return { app: null, db: null };
   }
   
