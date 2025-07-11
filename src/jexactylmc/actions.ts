@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { db } from "./firebase";
+import { db } from "../../jexactylmc/firebase";
 import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 import { generateServerGuide } from "@/ai/flows/generate-server-guide";
