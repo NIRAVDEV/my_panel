@@ -134,7 +134,7 @@ export async function createNode(formData: FormData): Promise<ActionState> {
 
 export async function updateNode(nodeId: string, formData: FormData): Promise<ActionState> {
     if (!db) return { success: false, error: "Firestore is not configured." };
-
+    
     const validatedFields = nodeSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
