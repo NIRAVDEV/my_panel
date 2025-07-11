@@ -9,36 +9,8 @@ import { summarizeActivity } from "@/lib/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Bot, Sparkles } from "lucide-react";
 
-const activities = [
-  {
-    player: "Steve",
-    avatar: "https://placehold.co/40x40/F0F0F0/000000.png?text=S",
-    fallback: "S",
-    action: "joined the server.",
-    time: "5m ago",
-  },
-  {
-    player: "Alex",
-    avatar: "https://placehold.co/40x40/F0F0F0/000000.png?text=A",
-    fallback: "A",
-    action: "crafted a diamond pickaxe.",
-    time: "12m ago",
-  },
-  {
-    player: "Creeper",
-    avatar: "https://placehold.co/40x40/F0F0F0/000000.png?text=C",
-    fallback: "C",
-    action: "was slain by Alex.",
-    time: "15m ago",
-  },
-  {
-    player: "Steve",
-    avatar: "https://placehold.co/40x40/F0F0F0/000000.png?text=S",
-    fallback: "S",
-    action: "mined 32 iron ore.",
-    time: "22m ago",
-  },
-];
+// Mock activities. In a real app, this would be fetched from a logging service.
+const activities: any[] = [];
 
 type SummaryState = {
   summary?: string;
@@ -52,13 +24,14 @@ export function ActivityFeed() {
 
   const handleSummarize = () => {
     startTransition(async () => {
-      // Generate a log string from the activities displayed in the feed.
-      const activityLog = activities
-        .map(
-          (activity) =>
-            `[${activity.time}] ${activity.player} ${activity.action}`
-        )
-        .join("\n");
+      // In a real app, you'd fetch real logs. Here we'll send a placeholder.
+      const activityLog = activities.length > 0
+        ? activities.map(
+            (activity) =>
+              `[${activity.time}] ${activity.player} ${activity.action}`
+          )
+          .join("\n")
+        : "No recent server activity to analyze.";
       const result = await summarizeActivity(activityLog);
       setSummaryState(result);
     });
@@ -71,24 +44,30 @@ export function ActivityFeed() {
         <CardDescription>A log of recent player activities.</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
-        <div className="space-y-4">
-          {activities.map((activity, index) => (
-            <div key={index} className="flex items-start gap-4">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src={activity.avatar} alt={activity.player} />
-                <AvatarFallback>{activity.fallback}</AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <p className="text-sm font-medium leading-none">
-                  <span className="font-semibold">{activity.player}</span> {activity.action}
-                </p>
-                <p className="text-sm text-muted-foreground">{activity.time}</p>
+        <div className="space-y-4 flex-1">
+          {activities.length > 0 ? (
+            activities.map((activity, index) => (
+              <div key={index} className="flex items-start gap-4">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={activity.avatar} alt={activity.player} />
+                  <AvatarFallback>{activity.fallback}</AvatarFallback>
+                </Avatar>
+                <div className="grid gap-1">
+                  <p className="text-sm font-medium leading-none">
+                    <span className="font-semibold">{activity.player}</span> {activity.action}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{activity.time}</p>
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center text-muted-foreground h-full flex items-center justify-center">
+              <p>No recent activity.</p>
             </div>
-          ))}
+          )}
         </div>
         <div className="mt-auto pt-4">
-          <Button onClick={handleSummarize} disabled={isPending} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+          <Button onClick={handleSummarize} disabled={isPending || activities.length === 0} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
             {isPending ? (
               "Analyzing..."
             ) : (
