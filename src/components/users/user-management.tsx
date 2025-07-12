@@ -162,7 +162,7 @@ export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
         </DialogContent>
       </Dialog>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border w-full overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

@@ -6,13 +6,16 @@ import { revalidatePath } from "next/cache";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import bcrypt from 'bcrypt';
-import * as fs from 'fs/promises';
+import * as fs from 'fs';
 import * as path from 'path';
 
 // import { generateServerGuide } from "@/ai/flows/generate-server-guide";
 // import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
 // import { summarizeServerActivity } from "@/ai/flows/summarize-server-activity";
 import type { Node, Server, User } from "@/lib/types";
+import { NodeForm } from "@/components/nodes/node-form";
+import { UserForm } from "@/components/users/user-form";
+import { CreateServerForm } from "@/components/panel/create-server-form";
 
 // AI Actions
 const guideSchema = z.object({
@@ -496,7 +499,7 @@ export async function login(prevState: any, formData: FormData): Promise<LoginSt
         }
         
         // Simulate session by writing email to a file
-        await fs.writeFile(SESSION_FILE, user.email, 'utf-8');
+        fs.writeFileSync(SESSION_FILE, user.email, 'utf-8');
 
         revalidatePath("/dashboard", "layout");
         return { success: true };
@@ -508,7 +511,7 @@ export async function login(prevState: any, formData: FormData): Promise<LoginSt
 
 export async function getCurrentUser(): Promise<User | null> {
     try {
-        const email = await fs.readFile(SESSION_FILE, 'utf-8');
+        const email = fs.readFileSync(SESSION_FILE, 'utf-8');
         if (!email) return null;
         
         const db = await getDb();
@@ -528,3 +531,5 @@ export async function getCurrentUser(): Promise<User | null> {
         return null;
     }
 }
+
+    

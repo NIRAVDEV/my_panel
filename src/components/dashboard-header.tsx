@@ -24,7 +24,7 @@ export function DashboardHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 lg:px-8">
       <SidebarTrigger className="sm:hidden" />
-      <div className="flex items-center gap-2">
+      <div className="hidden items-center gap-2 sm:flex">
         <h1 className="text-xl font-semibold capitalize md:text-2xl font-headline">
           {pageTitle}
         </h1>

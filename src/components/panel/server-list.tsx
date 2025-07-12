@@ -39,7 +39,6 @@ import { useToast } from "@/hooks/use-toast";
 import type { Server } from "@/lib/types";
 import { createServer, updateServerStatus, deleteServer } from "@/jexactylmc/actions";
 
-
 function CreateServerForm({ closeDialog }: { closeDialog: () => void }) {
     const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
@@ -143,7 +142,10 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
 
   const handleServerAction = (serverId: string, action: "start" | "stop" | "restart") => {
     startTransition(async () => {
-      await updateServerStatus(serverId, action);
+      const formData = new FormData();
+      formData.append('serverId', serverId);
+      formData.append('action', action);
+      await updateServerStatus(formData);
       toast({
         title: "Action Sent",
         description: `The "${action}" command has been sent to server ${serverId}.`,
@@ -197,7 +199,7 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
         </Dialog>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border w-full overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

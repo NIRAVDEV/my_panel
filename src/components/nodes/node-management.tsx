@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -18,7 +18,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -132,7 +131,6 @@ function NodeForm({ node, closeDialog }: { node?: Node, closeDialog: () => void 
     );
 }
 
-
 export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [isDialogOpen, setDialogOpen] = useState(false);
@@ -230,7 +228,7 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
         </DialogContent>
       </Dialog>
       
-      <div className="rounded-md border">
+      <div className="rounded-md border w-full overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
