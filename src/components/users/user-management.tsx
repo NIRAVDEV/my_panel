@@ -122,7 +122,7 @@ export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
                             <DropdownMenuItem 
                                 className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
                                 onClick={() => handleDelete(user.id)}
-                                disabled={user.email === 'admin@jexactyl.pro'}
+                                disabled={user.email === 'admin@admin.com'}
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete

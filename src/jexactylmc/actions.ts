@@ -417,24 +417,6 @@ export async function getUsers(): Promise<User[]> {
         const db = await getDb();
         const usersCollection = db.collection("users");
         const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
-        
-        if (users.length === 0) {
-            const adminPassword = await bcrypt.hash('admin123', 10);
-            const adminUser = {
-                name: "Admin",
-                email: "admin@admin.com",
-                password: adminPassword,
-                avatar: "https://placehold.co/40x40.png",
-                fallback: "A",
-                role: "Admin",
-                avatarHint: "administrator portrait",
-            };
-            const result = await usersCollection.insertOne(adminUser);
-            const finalUsers = [{ ...adminUser, id: result.insertedId.toString() }];
-            delete (finalUsers[0] as any).password;
-            return JSON.parse(JSON.stringify(finalUsers));
-        }
-        
         return JSON.parse(JSON.stringify(users.map(user => ({ ...user, id: user._id.toString() }))));
     } catch (error) {
         console.error("Error fetching users: ", error);
