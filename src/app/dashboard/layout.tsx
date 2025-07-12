@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { getCurrentUser } from "@/jexactylmc/actions";
-import { notFound, usePathname } from "next/navigation";
+import { notFound } from "next/navigation";
 
 export default async function DashboardLayout({
   children,

@@ -50,17 +50,23 @@ export default async function ServerManagementLayout({
             </div>
         </div>
         <div className="flex items-center gap-2">
-          <form action={updateServerStatus.bind(null, server.id, 'start')}>
+          <form action={updateServerStatus}>
+            <input type="hidden" name="serverId" value={server.id} />
+            <input type="hidden" name="action" value="start" />
             <Button type="submit" variant="outline" size="sm" disabled={server.status === 'Online' || server.status === 'Starting'}>
                 <Play className="mr-2 h-4 w-4" /> Start
             </Button>
           </form>
-          <form action={updateServerStatus.bind(null, server.id, 'restart')}>
+          <form action={updateServerStatus}>
+             <input type="hidden" name="serverId" value={server.id} />
+             <input type="hidden" name="action" value="restart" />
              <Button type="submit" variant="outline" size="sm" disabled={server.status === 'Offline' || server.status === 'Starting'}>
                 <RefreshCw className="mr-2 h-4 w-4" /> Restart
             </Button>
           </form>
-          <form action={updateServerStatus.bind(null, server.id, 'stop')}>
+          <form action={updateServerStatus}>
+            <input type="hidden" name="serverId" value={server.id} />
+            <input type="hidden" name="action" value="stop" />
             <Button type="submit" variant="destructive" size="sm" disabled={server.status === 'Offline'}>
                 <Square className="mr-2 h-4 w-4" /> Stop
             </Button>

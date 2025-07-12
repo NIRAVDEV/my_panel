@@ -278,7 +278,21 @@ export async function getServerById(id: string): Promise<Server | null> {
     }
 }
 
-export async function updateServerStatus(serverId: string, action: "start" | "stop" | "restart") {
+const updateStatusSchema = z.object({
+    serverId: z.string(),
+    action: z.enum(["start", "stop", "restart"]),
+});
+
+export async function updateServerStatus(formData: FormData) {
+    const validatedFields = updateStatusSchema.safeParse(Object.fromEntries(formData.entries()));
+
+    if (!validatedFields.success) {
+        console.error("Invalid server status update data", validatedFields.error);
+        return { success: false, error: "Invalid data provided." };
+    }
+
+    const { serverId, action } = validatedFields.data;
+
     try {
         const db = await getDb();
         let status: Server['status'] = 'Offline';
