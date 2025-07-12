@@ -1,9 +1,15 @@
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NodeManagement } from "@/components/nodes/node-management";
-import { getNodes } from "@/jexactylmc/actions";
+import { getCurrentUser, getNodes } from "@/jexactylmc/actions";
+import { redirect } from "next/navigation";
 
 export default async function NodesPage() {
+  const user = await getCurrentUser();
+  if (user?.role !== 'Admin') {
+    redirect('/dashboard');
+  }
+
   const initialNodes = await getNodes();
 
   return (

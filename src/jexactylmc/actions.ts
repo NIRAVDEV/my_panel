@@ -434,3 +434,20 @@ export async function deleteUser(userId: string): Promise<ActionState> {
         return { success: false, error: "Failed to delete user." };
     }
 }
+
+export async function getCurrentUser(): Promise<User | null> {
+    // In a real application, you would get the user from the session or token.
+    // For this demo, we'll fetch the admin user directly.
+    try {
+        const db = await getDb();
+        // This is a placeholder. A real app would have a way to identify the logged-in user.
+        const user = await db.collection("users").findOne({ email: "admin@jexactyl.pro" });
+        if (user) {
+            return JSON.parse(JSON.stringify({ ...user, id: user._id.toString() }));
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching current user:", error);
+        return null;
+    }
+}

@@ -1,8 +1,5 @@
-"use client";
-
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   SidebarProvider,
   Sidebar,
@@ -29,22 +26,21 @@ import {
   Users,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
+import { getCurrentUser } from "@/jexactylmc/actions";
+import { notFound, usePathname } from "next/navigation";
 
-// Mock user data. In a real app, this would come from an auth context.
-const user = {
-    name: "Admin",
-    email: "admin@jexactyl.pro",
-    role: "Admin"
-};
-
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
+    const user = await getCurrentUser();
 
-  const isActive = (path: string) => pathname.startsWith(path);
+    if (!user) {
+        // This case should ideally redirect to login, but for now, we'll show not found.
+        // In a real app with auth, a middleware would handle this.
+        return notFound();
+    }
 
   return (
     <SidebarProvider>
@@ -63,7 +59,6 @@ export default function DashboardLayout({
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === "/dashboard"}
                 className="font-medium"
               >
                 <Link href="/dashboard">
@@ -75,7 +70,6 @@ export default function DashboardLayout({
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
-                isActive={isActive("/dashboard/panel")}
                 className="font-medium"
               >
                 <Link href="/dashboard/panel">
@@ -87,7 +81,6 @@ export default function DashboardLayout({
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
-                isActive={isActive("/dashboard/assistant")}
                 className="font-medium"
               >
                 <Link href="/dashboard/assistant">
@@ -101,7 +94,6 @@ export default function DashboardLayout({
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={isActive("/dashboard/users")}
                     className="font-medium"
                   >
                     <Link href="/dashboard/users">
@@ -113,7 +105,6 @@ export default function DashboardLayout({
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={isActive("/dashboard/nodes")}
                     className="font-medium"
                   >
                     <Link href="/dashboard/nodes">

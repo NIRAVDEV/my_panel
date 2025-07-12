@@ -1,9 +1,15 @@
 
 import { UserManagement } from "@/components/users/user-management";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getUsers } from "@/jexactylmc/actions";
+import { getCurrentUser, getUsers } from "@/jexactylmc/actions";
+import { redirect } from "next/navigation";
 
 export default async function UsersPage() {
+  const user = await getCurrentUser();
+  if (user?.role !== 'Admin') {
+    redirect('/dashboard');
+  }
+
   const initialUsers = await getUsers();
 
   return (
