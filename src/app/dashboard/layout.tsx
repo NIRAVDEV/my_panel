@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import Link from "next/link";
 import {
@@ -26,8 +27,9 @@ import {
   Users,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { getCurrentUser } from "@/jexactylmc/actions";
-import { notFound } from "next/navigation";
+import { getCurrentUser, logout } from "@/jexactylmc/actions";
+import { notFound, redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 export default async function DashboardLayout({
   children,
@@ -39,7 +41,7 @@ export default async function DashboardLayout({
     if (!user) {
         // This case should ideally redirect to login, but for now, we'll show not found.
         // In a real app with auth, a middleware would handle this.
-        return notFound();
+        redirect('/');
     }
 
   return (
@@ -130,9 +132,12 @@ export default async function DashboardLayout({
                 {user.email}
               </p>
             </div>
-            <Link href="/">
-              <LogOut className="w-5 h-5 text-sidebar-foreground/70 hover:text-sidebar-foreground" />
-            </Link>
+            <form action={logout}>
+              <Button type="submit" variant="ghost" size="icon" className="text-sidebar-foreground/70 hover:text-sidebar-foreground">
+                  <LogOut className="w-5 h-5" />
+                  <span className="sr-only">Log Out</span>
+              </Button>
+            </form>
           </div>
         </SidebarFooter>
       </Sidebar>
@@ -144,3 +149,5 @@ export default async function DashboardLayout({
     </SidebarProvider>
   );
 }
+
+    

@@ -3,45 +3,24 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { cookies } from 'next/headers';
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import bcrypt from 'bcrypt';
-import * as fs from 'fs';
-import * as path from 'path';
 
-// import { generateServerGuide } from "@/ai/flows/generate-server-guide";
-// import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
-// import { summarizeServerActivity } from "@/ai/flows/summarize-server-activity";
 import type { Node, Server, User } from "@/lib/types";
 import { CreateUserSchema, UpdateUserSchema } from "@/lib/types";
 
-// AI Actions
-const guideSchema = z.object({
-  task: z.string().min(1, "Task description is required."),
-});
-
+// AI Actions (Temporarily Disabled)
 type GuideState = {
   steps?: string[];
   error?: string;
 };
 
 export async function getAIGuide(prevState: any, formData: FormData): Promise<GuideState> {
-  // const validatedFields = guideSchema.safeParse({
-  //   task: formData.get("task"),
-  // });
-
-  // if (!validatedFields.success) {
-  //   return {
-  //     error: "Please enter a task description.",
-  //   };
-  // }
-
-  // try {
-  //   const result = await generateServerGuide({ task: validatedFields.data.task });
-  //   return { steps: result.steps };
-  // } catch (error) {
-    return { error: "AI features are temporarily disabled. Please try again later." };
-  // }
+  console.log("getAIGuide called. AI features are disabled.");
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return { error: "AI features are temporarily disabled." };
 }
 
 type SummaryState = {
@@ -51,12 +30,9 @@ type SummaryState = {
 };
 
 export async function summarizeActivity(serverActivityLog: string): Promise<SummaryState> {
-    // try {
-    //     const result = await summarizeServerActivity({ serverActivityLog });
-    //     return { summary: result.summary, trends: result.trends };
-    // } catch (error) {
-        return { error: "AI features are temporarily disabled. Please try again later." };
-    // }
+    console.log("summarizeActivity called. AI features are disabled.");
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return { error: "AI features are temporarily disabled." };
 }
 
 type InstallerGuideState = {
@@ -65,14 +41,22 @@ type InstallerGuideState = {
 }
 
 export async function getNodeInstallerGuide(nodeId: string, panelUrl: string, os: "debian" | "nixos"): Promise<InstallerGuideState> {
-    // try {
-    //     const result = await generateNodeInstaller({ nodeId, panelUrl, os });
-    //     return { guide: result.guide };
-    // } catch (error) {
-    //     console.error(error);
-        return { error: "AI features are temporarily disabled. Please try again later." };
-    // }
+    console.log("getNodeInstallerGuide called. AI features are disabled.");
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return { guide: `AI features are temporarily disabled. Please refer to the official documentation for installing the daemon on ${os}.` };
 }
+
+type NodeConfigState = {
+    config?: string;
+    error?: string;
+}
+
+export async function getAINodeConfig(node: Node): Promise<NodeConfigState> {
+    console.log("getAINodeConfig called. AI features are disabled.");
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return { config: `# AI features are temporarily disabled.\n# A placeholder configuration would be generated here based on the node details.` };
+}
+
 
 // MongoDB Helper
 async function getDb() {
@@ -172,6 +156,7 @@ export async function updateNode(nodeId: string, formData: FormData): Promise<Ac
             }
         );
         revalidatePath("/dashboard/nodes");
+        revalidatePath(`/dashboard/nodes/${nodeId}`);
         return { success: true };
     } catch (error) {
         console.error("Error updating node:", error);
@@ -187,6 +172,20 @@ export async function getNodes(): Promise<Node[]> {
     } catch (error) {
         console.error("Error fetching nodes: ", error);
         return [];
+    }
+}
+
+export async function getNodeById(id: string): Promise<Node | null> {
+    try {
+        const db = await getDb();
+        const node = await db.collection("nodes").findOne({ _id: new ObjectId(id) });
+        if (node) {
+            return JSON.parse(JSON.stringify({ ...node, id: node._id.toString() }));
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching node: ", error);
+        return null;
     }
 }
 
@@ -399,6 +398,7 @@ export async function updateUser(userId: string, formData: FormData): Promise<Ac
             }
         );
         revalidatePath("/dashboard/users");
+        revalidatePath(`/dashboard/users/${userId}`);
         return { success: true };
     } catch (error) {
         console.error("Error updating user:", error);
@@ -412,25 +412,33 @@ export async function getUsers(): Promise<User[]> {
         const db = await getDb();
         const usersCollection = db.collection("users");
         
-        const userCount = await usersCollection.countDocuments();
-        if (userCount === 0) {
-            const hashedPassword = await bcrypt.hash("admin123", 10);
+        const adminUser = await usersCollection.findOne({ email: "admin@admin.com" });
+        const hashedPassword = await bcrypt.hash("admin123", 10);
+
+        if (!adminUser) {
+            // If admin user doesn't exist, create it
             await usersCollection.insertOne({
                 name: "Admin",
-                email: "admin@gmail.com",
+                email: "admin@admin.com",
                 password: hashedPassword,
                 role: "Admin",
                 avatar: `https://placehold.co/40x40.png`,
                 fallback: "A",
                 avatarHint: "user portrait"
             });
+        } else {
+            // If admin user exists, ensure the password is correct
+            await usersCollection.updateOne(
+                { _id: adminUser._id },
+                { $set: { password: hashedPassword } }
+            );
         }
         
         const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
 
         return JSON.parse(JSON.stringify(users.map(user => ({ ...user, id: user._id.toString() }))));
     } catch (error) {
-        console.error("Error fetching users: ", error);
+        console.error("Error fetching/ensuring users: ", error);
         return [];
     }
 }
@@ -439,7 +447,7 @@ export async function deleteUser(userId: string): Promise<ActionState> {
     try {
         const db = await getDb();
         const userDoc = await db.collection("users").findOne({ _id: new ObjectId(userId) });
-        if (userDoc && userDoc.email === 'admin@gmail.com') {
+        if (userDoc && userDoc.email === 'admin@admin.com') {
             console.error("Attempted to delete protected admin user.");
             return { success: false, error: "Cannot delete the default admin user." };
         }
@@ -452,9 +460,7 @@ export async function deleteUser(userId: string): Promise<ActionState> {
     }
 }
 
-// Session Management (Simulated)
-const SESSION_FILE = path.join(process.cwd(), '.session.tmp');
-
+// Session Management
 const loginSchema = z.object({
     email: z.string().email(),
     password: z.string(),
@@ -489,11 +495,17 @@ export async function login(formData: FormData): Promise<LoginState> {
             return { error: "Invalid credentials." };
         }
         
-        // Simulate session by writing email to a file
-        fs.writeFileSync(SESSION_FILE, user.email, 'utf-8');
+        // Set session cookie
+        cookies().set('session_userId', user._id.toString(), {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 60 * 60 * 24 * 7, // One week
+            path: '/',
+        });
         
         const userToReturn = { ...user, id: user._id.toString() };
         delete (userToReturn as any).password;
+
 
         return { user: JSON.parse(JSON.stringify(userToReturn)) };
     } catch (error) {
@@ -502,16 +514,25 @@ export async function login(formData: FormData): Promise<LoginState> {
     }
 }
 
+export async function logout() {
+    cookies().delete('session_userId');
+    revalidatePath('/');
+}
+
+
 export async function getCurrentUser(): Promise<User | null> {
+    const userId = cookies().get('session_userId')?.value;
+
+    if (!userId) {
+        return null;
+    }
+
     try {
-        if (!fs.existsSync(SESSION_FILE)) {
-          return null;
-        }
-        const email = fs.readFileSync(SESSION_FILE, 'utf-8');
-        if (!email) return null;
-        
         const db = await getDb();
-        const user = await db.collection("users").findOne({ email }, { projection: { password: 0 } });
+        const user = await db.collection("users").findOne(
+            { _id: new ObjectId(userId) },
+            { projection: { password: 0 } }
+        );
         
         if (user) {
             return JSON.parse(JSON.stringify({ ...user, id: user._id.toString() }));
@@ -519,14 +540,50 @@ export async function getCurrentUser(): Promise<User | null> {
         
         return null;
     } catch (error) {
-         // If file doesn't exist, no one is logged in.
-        if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-            return null;
-        }
         console.error("Error fetching current user:", error);
         return null;
     }
 }
 
+// Server Log Actions
+const mockLogs: { [serverId: string]: string[] } = {
+  '1': [
+    '[12:00:00] [Server thread/INFO]: Starting Minecraft server version 1.21',
+    '[12:00:01] [Server thread/INFO]: Loading properties',
+    '[12:00:02] [Server thread/INFO]: Default game type: SURVIVAL',
+    '[12:00:03] [Server thread/INFO]: Generating keypair',
+    '[12:00:05] [Server thread/INFO]: Starting minecraft server on *:25565',
+    '[12:00:06] [Server thread/INFO]: Using default channel type',
+    '[12:00:08] [Server thread/INFO]: Preparing level "world"',
+    '[12:00:15] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld',
+    '[12:00:20] [Server thread/INFO]: Done (19.827s)! For help, type "help" or "?"',
+    '[12:00:25] [User Authenticator #1/INFO]: UUID of player Steve is 069a79f4-44e9-4726-a5be-fca90e38aaf5',
+    '[12:00:26] [Server thread/INFO]: Steve[/127.0.0.1:54321] logged in with entity id 123 at (8.5, 64.0, 8.5)',
+    '[12:00:27] [Server thread/INFO]: Steve joined the game',
+  ],
+  'default': [
+    '[INFO] No logs available for this server yet. Start the server to generate logs.'
+  ]
+};
 
+export async function getServerLogs(serverId: string): Promise<string[]> {
+    // In a real application, this would fetch logs from a file, database, or a log streaming service.
+    // For now, we'll return mock data.
+    const db = await getDb();
+    const server = await db.collection("servers").findOne({ _id: new ObjectId(serverId) });
+
+    if (!server) {
+        return ['[ERROR] Server not found.'];
+    }
+
+    if (server.status === 'Offline') {
+        return [`[INFO] Server is offline. Start the server to view logs.`];
+    }
     
+    // Using a simple mock based on server ID for variety
+    const serverObjectId = new ObjectId(serverId);
+    const lastChar = serverObjectId.toString().slice(-1);
+    const logKey = lastChar > '7' ? '1' : '1'; // Just to show some variety. A real app would have real logic.
+    
+    return mockLogs[logKey] || mockLogs['default'];
+}

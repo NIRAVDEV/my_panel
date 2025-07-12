@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
 import {
@@ -141,7 +142,9 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
             {nodes.length > 0 ? nodes.map((node) => (
               <TableRow key={node.id} className={isPending ? 'opacity-50' : ''}>
                 <TableCell>
-                  <div className="font-medium flex items-center gap-2">{node.name} <Badge variant="outline">{node.os}</Badge></div>
+                  <Link href={`/dashboard/nodes/${node.id}`} className="font-medium hover:underline flex items-center gap-2">
+                    {node.name} <Badge variant="outline">{node.os}</Badge>
+                  </Link>
                   <div className="text-sm text-muted-foreground">{node.fqdn}</div>
                 </TableCell>
                 <TableCell>{getStatusBadge(node.status)}</TableCell>
@@ -220,5 +223,3 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
     </CardContent>
   );
 }
-
-    

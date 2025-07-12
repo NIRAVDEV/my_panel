@@ -7,6 +7,7 @@ import { Cpu, HardDrive, Users } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { ResourceCharts } from "@/components/dashboard/resource-charts";
 import { Badge } from "@/components/ui/badge";
+import { ServerConsole } from "@/components/panel/server-console";
 
 export default async function ServerOverviewPage({ params }: { params: { id: string } }) {
   const server = await getServerById(params.id);
@@ -40,20 +41,7 @@ export default async function ServerOverviewPage({ params }: { params: { id: str
         />
       </div>
 
-      <Card>
-          <CardHeader>
-              <CardTitle>Server Console</CardTitle>
-              <CardDescription>Live output from your server.</CardDescription>
-          </CardHeader>
-          <CardContent>
-              <div className="bg-muted aspect-video rounded-md p-4 text-sm font-mono text-muted-foreground overflow-auto">
-                  <p>[INFO] Server is starting...</p>
-                  <p>[INFO] Loading plugins...</p>
-                  <p>[INFO] WorldEdit loaded.</p>
-                  <p>[INFO] Done! For help, type "help".</p>
-              </div>
-          </CardContent>
-      </Card>
+      <ServerConsole serverId={server.id} />
 
       <ResourceCharts />
     </>

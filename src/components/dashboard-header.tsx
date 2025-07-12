@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -13,9 +14,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
+import { logout } from "@/jexactylmc/actions";
 
 export function DashboardHeader() {
   const pathname = usePathname();
@@ -38,7 +39,7 @@ export function DashboardHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="@admin" />
+                <AvatarImage src="https://placehold.co/100x100.png" alt="@admin" data-ai-hint="user portrait" />
                 <AvatarFallback>A</AvatarFallback>
               </Avatar>
             </Button>
@@ -49,12 +50,16 @@ export function DashboardHeader() {
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuItem>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <Link href="/">
-              <DropdownMenuItem>Logout</DropdownMenuItem>
-            </Link>
+            <form action={logout}>
+                <button type="submit" className="w-full text-left">
+                    <DropdownMenuItem>Logout</DropdownMenuItem>
+                </button>
+            </form>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
     </header>
   );
 }
+
+    

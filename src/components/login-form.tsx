@@ -38,7 +38,7 @@ export function LoginForm() {
     if (state.user) {
       router.push("/dashboard");
     }
-  }, [state.user, router]);
+  }, [state, router]);
 
   return (
     <Card className="w-full max-w-sm">
@@ -63,9 +63,8 @@ export function LoginForm() {
               id="email"
               name="email"
               type="email"
-              placeholder="admin@panel.com"
+              placeholder="admin@admin.com"
               required
-              defaultValue="admin@admin.com"
             />
           </div>
           <div className="grid gap-2">
