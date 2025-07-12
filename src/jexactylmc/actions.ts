@@ -473,7 +473,7 @@ type LoginState = {
 };
 
 
-export async function login(prevState: any, formData: FormData): Promise<LoginState> {
+export async function login(formData: FormData): Promise<LoginState> {
     const validatedFields = loginSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -537,3 +537,4 @@ export async function getCurrentUser(): Promise<User | null> {
 
 
     
+

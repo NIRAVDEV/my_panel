@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -16,14 +16,19 @@ type LoginState = {
   user?: User | null;
 };
 
-const initialState: LoginState = {
-  error: undefined,
-  user: null,
-};
-
 export function LoginForm() {
   const router = useRouter();
-  const [state, formAction, isPending] = useActionState(login, initialState);
+  const [isPending, startTransition] = useTransition();
+  const [state, setState] = useState<LoginState>({ error: undefined, user: null });
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(async () => {
+      const result = await login(formData);
+      setState(result);
+    });
+  };
 
   useEffect(() => {
     if (state.user) {
@@ -40,7 +45,7 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={formAction} className="grid gap-4">
+        <form onSubmit={handleSubmit} className="grid gap-4">
           {state.error && (
             <Alert variant="destructive">
                 <Terminal className="h-4 w-4" />
