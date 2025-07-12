@@ -77,7 +77,7 @@ export async function getNodeInstallerGuide(nodeId: string, panelUrl: string, os
 // MongoDB Helper
 async function getDb() {
     const client = await clientPromise;
-    return client.db();
+    return client.db("panel");
 }
 
 // Common Action State
@@ -328,13 +328,20 @@ export async function deleteServer(serverId: string): Promise<ActionState> {
 
 // User Actions
 const userSchemaBase = z.object({
-    name: z.string().min(1, "Name is required"),
+    name: z.string().min(3, "Name must be at least 3 characters").max(30, "Name cannot exceed 30 characters"),
     email: z.string().email("Invalid email address"),
     role: z.enum(["Admin", "User"]),
 });
 
+const passwordSchema = z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character");
+
 const createUserSchema = userSchemaBase.extend({
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    password: passwordSchema,
 });
 
 const updateUserSchema = userSchemaBase;
@@ -417,6 +424,7 @@ export async function getUsers(): Promise<User[]> {
         const db = await getDb();
         const usersCollection = db.collection("users");
         const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
+
         return JSON.parse(JSON.stringify(users.map(user => ({ ...user, id: user._id.toString() }))));
     } catch (error) {
         console.error("Error fetching users: ", error);
