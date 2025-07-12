@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { MoreHorizontal, Play, PlusCircle, RefreshCw, SlidersHorizontal, Square, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -82,13 +81,11 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
   return (
     <CardContent>
       <div className="flex justify-end mb-4">
+        <Button onClick={() => setOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Create Server
+        </Button>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create Server
-            </Button>
-          </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
             <CreateServerForm closeDialog={() => setOpen(false)} />
           </DialogContent>
@@ -170,3 +167,5 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
     </CardContent>
   );
 }
+
+    

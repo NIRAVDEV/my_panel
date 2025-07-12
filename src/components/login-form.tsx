@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -9,23 +9,27 @@ import { Button } from "@/components/ui/button";
 import { login } from "@/jexactylmc/actions";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Terminal } from "lucide-react";
+import type { User } from "@/lib/types";
 
 type LoginState = {
   error?: string;
-  success: boolean;
+  user?: User | null;
 };
 
 const initialState: LoginState = {
-  success: false,
+  error: undefined,
+  user: null,
 };
 
 export function LoginForm() {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(login, initialState);
 
-  if (state.success) {
-    router.push("/dashboard");
-  }
+  useEffect(() => {
+    if (state.user) {
+      router.push("/dashboard");
+    }
+  }, [state.user, router]);
 
   return (
     <Card className="w-full max-w-sm">

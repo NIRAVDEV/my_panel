@@ -469,7 +469,7 @@ const loginSchema = z.object({
 
 type LoginState = {
   error?: string;
-  success: boolean;
+  user?: User | null;
 };
 
 
@@ -477,7 +477,7 @@ export async function login(prevState: any, formData: FormData): Promise<LoginSt
     const validatedFields = loginSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
-        return { success: false, error: "Invalid email or password format." };
+        return { error: "Invalid email or password format." };
     }
     
     const { email, password } = validatedFields.data;
@@ -487,23 +487,25 @@ export async function login(prevState: any, formData: FormData): Promise<LoginSt
         const user = await db.collection("users").findOne({ email });
 
         if (!user) {
-            return { success: false, error: "Invalid credentials." };
+            return { error: "Invalid credentials." };
         }
         
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
-            return { success: false, error: "Invalid credentials." };
+            return { error: "Invalid credentials." };
         }
         
         // Simulate session by writing email to a file
         fs.writeFileSync(SESSION_FILE, user.email, 'utf-8');
+        
+        const userToReturn = { ...user, id: user._id.toString() };
+        delete (userToReturn as any).password;
 
-        revalidatePath("/dashboard", "layout");
-        return { success: true };
+        return { user: JSON.parse(JSON.stringify(userToReturn)) };
     } catch (error) {
         console.error("Login error:", error);
-        return { success: false, error: "An unexpected error occurred." };
+        return { error: "An unexpected error occurred." };
     }
 }
 
@@ -532,3 +534,6 @@ export async function getCurrentUser(): Promise<User | null> {
         return null;
     }
 }
+
+
+    

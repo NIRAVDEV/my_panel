@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -139,3 +138,5 @@ export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
     </CardContent>
   );
 }
+
+    
