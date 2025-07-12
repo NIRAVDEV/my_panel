@@ -64,5 +64,3 @@ export const UpdateUserSchema = z.object({
     email: z.string().email("Invalid email address"),
     role: z.enum(["Admin", "User"]),
 });
-
-    
