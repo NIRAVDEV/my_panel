@@ -3,7 +3,6 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useFormStatus } from "react-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -22,15 +21,6 @@ const initialState: LoginState = {
     error: undefined,
     user: null,
 };
-
-function LoginButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button type="submit" className="w-full mt-2 bg-primary hover:bg-primary/90" disabled={pending}>
-            {pending ? 'Signing In...' : 'Sign In'}
-        </Button>
-    );
-}
 
 export function LoginForm() {
   const router = useRouter();
@@ -80,7 +70,7 @@ export function LoginForm() {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required defaultValue="admin010203" />
+            <Input id="password" name="password" type="password" required />
           </div>
           <Button type="submit" className="w-full mt-2 bg-primary hover:bg-primary/90" disabled={isPending}>
             {isPending ? 'Signing In...' : 'Sign In'}
