@@ -31,6 +31,7 @@ export type User = {
   id: string; // Document ID from MongoDB
   name: string;
   email: string;
+  password?: string;
   avatar: string;
   fallback: string;
   role: "Admin" | "User";

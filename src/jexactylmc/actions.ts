@@ -5,6 +5,9 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import bcrypt from 'bcrypt';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 import { generateServerGuide } from "@/ai/flows/generate-server-guide";
 import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
@@ -60,7 +63,7 @@ type InstallerGuideState = {
     error?: string;
 }
 
-export async function getNodeInstallerGuide(nodeId: string, panelUrl: string, os: string): Promise<InstallerGuideState> {
+export async function getNodeInstallerGuide(nodeId: string, panelUrl: string, os: "debian" | "nixos"): Promise<InstallerGuideState> {
     try {
         const result = await generateNodeInstaller({ nodeId, panelUrl, os });
         return { guide: result.guide };
@@ -316,7 +319,7 @@ const userSchemaBase = z.object({
 });
 
 const createUserSchema = userSchemaBase.extend({
-    password: z.string().min(1, "Password is required"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const updateUserSchema = userSchemaBase;
@@ -328,7 +331,7 @@ export async function createUser(formData: FormData): Promise<ActionState> {
         return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
     }
 
-    const { email, role, name } = validatedFields.data;
+    const { email, role, name, password } = validatedFields.data;
     const fallback = name.charAt(0).toUpperCase();
 
     try {
@@ -337,10 +340,13 @@ export async function createUser(formData: FormData): Promise<ActionState> {
         if (existingUser) {
             return { success: false, error: "A user with this email address already exists." };
         }
+        
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         await db.collection("users").insertOne({
             name: name,
             email: email,
+            password: hashedPassword,
             role: role,
             avatar: `https://placehold.co/40x40.png`,
             fallback: fallback,
@@ -395,12 +401,14 @@ export async function getUsers(): Promise<User[]> {
     try {
         const db = await getDb();
         const usersCollection = db.collection("users");
-        const users = await usersCollection.find({}).toArray();
+        const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
         
         if (users.length === 0) {
-            const adminUser: Omit<User, 'id'> = {
+            const adminPassword = await bcrypt.hash('admin', 10);
+            const adminUser = {
                 name: "Admin",
                 email: "admin@jexactyl.pro",
+                password: adminPassword,
                 avatar: "https://placehold.co/40x40.png",
                 fallback: "A",
                 role: "Admin",
@@ -408,6 +416,7 @@ export async function getUsers(): Promise<User[]> {
             };
             const result = await usersCollection.insertOne(adminUser);
             const finalUsers = [{ ...adminUser, id: result.insertedId.toString() }];
+            delete finalUsers[0].password;
             return JSON.parse(JSON.stringify(finalUsers));
         }
         
@@ -435,18 +444,72 @@ export async function deleteUser(userId: string): Promise<ActionState> {
     }
 }
 
-export async function getCurrentUser(): Promise<User | null> {
-    // In a real application, you would get the user from the session or token.
-    // For this demo, we'll fetch the admin user directly.
+// Session Management (Simulated)
+const SESSION_FILE = path.join(process.cwd(), '.session.tmp');
+
+const loginSchema = z.object({
+    email: z.string().email(),
+    password: z.string(),
+});
+
+type LoginState = {
+  error?: string;
+  success: boolean;
+};
+
+
+export async function login(prevState: any, formData: FormData): Promise<LoginState> {
+    const validatedFields = loginSchema.safeParse(Object.fromEntries(formData.entries()));
+
+    if (!validatedFields.success) {
+        return { success: false, error: "Invalid email or password format." };
+    }
+    
+    const { email, password } = validatedFields.data;
+
     try {
         const db = await getDb();
-        // This is a placeholder. A real app would have a way to identify the logged-in user.
-        const user = await db.collection("users").findOne({ email: "admin@jexactyl.pro" });
+        const user = await db.collection("users").findOne({ email });
+
+        if (!user) {
+            return { success: false, error: "Invalid credentials." };
+        }
+        
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return { success: false, error: "Invalid credentials." };
+        }
+        
+        // Simulate session by writing email to a file
+        await fs.writeFile(SESSION_FILE, user.email, 'utf-8');
+
+        revalidatePath("/dashboard", "layout");
+        return { success: true };
+    } catch (error) {
+        console.error("Login error:", error);
+        return { success: false, error: "An unexpected error occurred." };
+    }
+}
+
+export async function getCurrentUser(): Promise<User | null> {
+    try {
+        const email = await fs.readFile(SESSION_FILE, 'utf-8');
+        if (!email) return null;
+        
+        const db = await getDb();
+        const user = await db.collection("users").findOne({ email }, { projection: { password: 0 } });
+        
         if (user) {
             return JSON.parse(JSON.stringify({ ...user, id: user._id.toString() }));
         }
+        
         return null;
     } catch (error) {
+         // If file doesn't exist, no one is logged in.
+        if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+            return null;
+        }
         console.error("Error fetching current user:", error);
         return null;
     }
