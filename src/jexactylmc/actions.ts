@@ -336,8 +336,7 @@ export async function createUser(formData: FormData): Promise<ActionState> {
     }
 
     const { email, role, name, password } = validatedFields.data;
-    const fallback = name.charAt(0).toUpperCase();
-
+    
     try {
         const db = await getDb();
         const existingUser = await db.collection("users").findOne({ email: email });
@@ -346,8 +345,9 @@ export async function createUser(formData: FormData): Promise<ActionState> {
         }
         
         const hashedPassword = await bcrypt.hash(password, 10);
+        const fallback = name.charAt(0).toUpperCase();
 
-        await db.collection("users").insertOne({
+        const newUserDocument = {
             name: name,
             email: email,
             password: hashedPassword,
@@ -355,7 +355,9 @@ export async function createUser(formData: FormData): Promise<ActionState> {
             avatar: `https://placehold.co/40x40.png`,
             fallback: fallback,
             avatarHint: "user portrait"
-        });
+        };
+
+        await db.collection("users").insertOne(newUserDocument);
         revalidatePath("/dashboard/users");
         return { success: true };
     } catch (error) {
@@ -521,3 +523,6 @@ export async function getCurrentUser(): Promise<User | null> {
         return null;
     }
 }
+
+
+    

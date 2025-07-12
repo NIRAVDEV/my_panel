@@ -28,11 +28,11 @@ export type Node = {
   visibility: "Public" | "Private";
 };
 
-// Base schema for user, used for validation and type inference
+// Represents a user object fetched from the database (password is not included)
 export const UserSchema = z.object({
   id: z.string(), // Document ID from MongoDB
-  name: z.string().min(3, "Name must be at least 3 characters").max(30, "Name cannot exceed 30 characters"),
-  email: z.string().email("Invalid email address"),
+  name: z.string(),
+  email: z.string().email(),
   avatar: z.string().url(),
   fallback: z.string(),
   role: z.enum(["Admin", "User"]),
@@ -42,7 +42,7 @@ export const UserSchema = z.object({
 // Infer the User type from the Zod schema
 export type User = z.infer<typeof UserSchema>;
 
-// Schema for creating a new user, requires a password
+// Schema for validating the password
 const passwordSchema = z.string()
     .min(8, "Password must be at least 8 characters")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
@@ -50,6 +50,7 @@ const passwordSchema = z.string()
     .regex(/[0-9]/, "Password must contain at least one number")
     .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character");
 
+// Schema for validating the user creation form
 export const CreateUserSchema = z.object({
     name: z.string().min(3, "Name must be at least 3 characters").max(30, "Name cannot exceed 30 characters"),
     email: z.string().email("Invalid email address"),
@@ -57,9 +58,11 @@ export const CreateUserSchema = z.object({
     password: passwordSchema,
 });
 
-// Schema for updating an existing user, password is not required
+// Schema for validating the user update form
 export const UpdateUserSchema = z.object({
     name: z.string().min(3, "Name must be at least 3 characters").max(30, "Name cannot exceed 30 characters"),
     email: z.string().email("Invalid email address"),
     role: z.enum(["Admin", "User"]),
 });
+
+    
