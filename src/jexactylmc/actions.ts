@@ -12,7 +12,7 @@ import * as path from 'path';
 // import { generateServerGuide } from "@/ai/flows/generate-server-guide";
 // import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
 // import { summarizeServerActivity } from "@/ai/flows/summarize-server-activity";
-import type { User } from "@/lib/types";
+import type { Node, Server, User } from "@/lib/types";
 import { CreateUserSchema, UpdateUserSchema } from "@/lib/types";
 
 // AI Actions
@@ -328,36 +328,36 @@ export async function deleteServer(serverId: string): Promise<ActionState> {
 
 // User Actions
 export async function createUser(formData: FormData): Promise<ActionState> {
-    const validatedFields = CreateUserSchema.safeParse(Object.fromEntries(formData.entries()));
+    const data = Object.fromEntries(formData.entries());
+    const validatedFields = CreateUserSchema.safeParse(data);
 
     if (!validatedFields.success) {
         console.error('Validation Errors:', validatedFields.error.flatten().fieldErrors);
-        return { 
-            success: false, 
-            error: "Invalid fields. Please check your input and try again.", 
-            errors: validatedFields.error.flatten().fieldErrors 
+        return {
+            success: false,
+            error: "Invalid fields. Please check your input and try again.",
+            errors: validatedFields.error.flatten().fieldErrors,
         };
     }
-    
+
     const { name, email, role, password } = validatedFields.data;
-    
+
     try {
         const db = await getDb();
         const existingUser = await db.collection("users").findOne({ email: email });
         if (existingUser) {
             return { success: false, error: "A user with this email address already exists." };
         }
-        
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const fallback = name.charAt(0).toUpperCase();
 
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
         const newUserDocument = {
             name: name,
             email: email,
             password: hashedPassword,
             role: role,
             avatar: `https://placehold.co/40x40.png`,
-            fallback: fallback,
+            fallback: name.charAt(0).toUpperCase(),
             avatarHint: "user portrait"
         };
 
