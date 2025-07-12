@@ -1,4 +1,6 @@
 
+import { z } from 'zod';
+
 export type Server = {
   id: string;
   name: string;
@@ -27,13 +29,32 @@ export type Node = {
   visibility: "Public" | "Private";
 };
 
-export type User = {
-  id: string; // Document ID from MongoDB
-  name: string;
-  email: string;
-  password?: string;
-  avatar: string;
-  fallback: string;
-  role: "Admin" | "User";
-  avatarHint?: string;
-};
+// Base schema for user, used for validation and type inference
+export const UserSchema = z.object({
+  id: z.string(), // Document ID from MongoDB
+  name: z.string().min(3, "Name must be at least 3 characters").max(30, "Name cannot exceed 30 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().optional(),
+  avatar: z.string().url(),
+  fallback: z.string(),
+  role: z.enum(["Admin", "User"]),
+  avatarHint: z.string().optional(),
+});
+
+// Infer the User type from the Zod schema
+export type User = z.infer<typeof UserSchema>;
+
+// Schema for creating a new user, requires a password
+const passwordSchema = z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character");
+
+export const CreateUserSchema = UserSchema.omit({ id: true, avatar: true, fallback: true, avatarHint: true }).extend({
+    password: passwordSchema,
+});
+
+// Schema for updating an existing user, password is not required
+export const UpdateUserSchema = UserSchema.omit({ id: true, password: true, avatar: true, fallback: true, avatarHint: true });

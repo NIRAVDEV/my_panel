@@ -13,6 +13,7 @@ import * as path from 'path';
 // import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
 // import { summarizeServerActivity } from "@/ai/flows/summarize-server-activity";
 import type { Node, Server, User } from "@/lib/types";
+import { CreateUserSchema, UpdateUserSchema } from "@/lib/types";
 import { notFound } from "next/navigation";
 
 // AI Actions
@@ -327,27 +328,8 @@ export async function deleteServer(serverId: string): Promise<ActionState> {
 
 
 // User Actions
-const userSchemaBase = z.object({
-    name: z.string().min(3, "Name must be at least 3 characters").max(30, "Name cannot exceed 30 characters"),
-    email: z.string().email("Invalid email address"),
-    role: z.enum(["Admin", "User"]),
-});
-
-const passwordSchema = z.string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character");
-
-const createUserSchema = userSchemaBase.extend({
-    password: passwordSchema,
-});
-
-const updateUserSchema = userSchemaBase;
-
 export async function createUser(formData: FormData): Promise<ActionState> {
-    const validatedFields = createUserSchema.safeParse(Object.fromEntries(formData.entries()));
+    const validatedFields = CreateUserSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
         return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
@@ -383,7 +365,7 @@ export async function createUser(formData: FormData): Promise<ActionState> {
 }
 
 export async function updateUser(userId: string, formData: FormData): Promise<ActionState> {
-    const validatedFields = updateUserSchema.safeParse(Object.fromEntries(formData.entries()));
+    const validatedFields = UpdateUserSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
         return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
