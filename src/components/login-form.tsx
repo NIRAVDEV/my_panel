@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,15 @@ function LoginButton() {
 
 export function LoginForm() {
   const router = useRouter();
-  const [state, formAction] = useFormState(login, initialState);
+  const [state, setState] = useState<LoginState>(initialState);
+  const [isPending, startTransition] = useTransition();
+
+  const handleSubmit = (formData: FormData) => {
+    startTransition(async () => {
+      const result = await login(formData);
+      setState(result);
+    });
+  };
 
   useEffect(() => {
     if (state.user) {
@@ -51,7 +59,7 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={formAction} className="grid gap-4">
+        <form action={handleSubmit} className="grid gap-4">
           {state.error && (
             <Alert variant="destructive">
                 <Terminal className="h-4 w-4" />
@@ -74,7 +82,9 @@ export function LoginForm() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" name="password" type="password" required defaultValue="admin010203" />
           </div>
-          <LoginButton />
+          <Button type="submit" className="w-full mt-2 bg-primary hover:bg-primary/90" disabled={isPending}>
+            {isPending ? 'Signing In...' : 'Sign In'}
+          </Button>
         </form>
       </CardContent>
     </Card>
