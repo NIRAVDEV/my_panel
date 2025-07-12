@@ -90,6 +90,7 @@ const nodeSchema = z.object({
     name: z.string().min(1, "Name is required"),
     location: z.string().min(1, "Location is required"),
     os: z.enum(["debian", "nixos"]),
+    visibility: z.enum(["Public", "Private"]),
     fqdn: z.string().min(1, "FQDN is required"),
     memory: z.coerce.number().int().positive("Memory must be a positive number"),
     disk: z.coerce.number().int().positive("Disk must be a positive number"),
@@ -112,7 +113,7 @@ export async function createNode(formData: FormData): Promise<ActionState> {
         };
     }
     
-    const { name, location, fqdn, memory, disk, os, portsStart, portsEnd } = validatedFields.data;
+    const { name, location, fqdn, memory, disk, os, visibility, portsStart, portsEnd } = validatedFields.data;
 
     try {
         const db = await getDb();
@@ -123,6 +124,7 @@ export async function createNode(formData: FormData): Promise<ActionState> {
             memory,
             disk,
             os,
+            visibility,
             ports: { start: portsStart, end: portsEnd },
             servers: 0,
             status: "Offline",
@@ -146,7 +148,7 @@ export async function updateNode(nodeId: string, formData: FormData): Promise<Ac
         };
     }
 
-    const { name, location, fqdn, memory, disk, os, portsStart, portsEnd } = validatedFields.data;
+    const { name, location, fqdn, memory, disk, os, visibility, portsStart, portsEnd } = validatedFields.data;
 
     try {
         const db = await getDb();
@@ -160,6 +162,7 @@ export async function updateNode(nodeId: string, formData: FormData): Promise<Ac
                     memory,
                     disk,
                     os,
+                    visibility,
                     ports: { start: portsStart, end: portsEnd },
                 }
             }

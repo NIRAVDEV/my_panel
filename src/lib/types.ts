@@ -24,6 +24,7 @@ export type Node = {
   servers: number;
   os: "debian" | "nixos";
   status: "Online" | "Offline";
+  visibility: "Public" | "Private";
 };
 
 export type User = {

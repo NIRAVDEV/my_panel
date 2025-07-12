@@ -32,6 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import type { Node } from "@/lib/types";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 function NodeForm({ node, closeDialog }: { node?: Node, closeDialog: () => void }) {
     const { toast } = useToast();
@@ -87,6 +88,19 @@ function NodeForm({ node, closeDialog }: { node?: Node, closeDialog: () => void 
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="location" className="text-right">Location</Label>
                 <Input id="location" name="location" className="col-span-3" placeholder="e.g., Los Angeles, CA" defaultValue={node?.location} required />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Visibility</Label>
+                  <RadioGroup name="visibility" defaultValue={node?.visibility || 'Public'} className="col-span-3 flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Public" id="v-public" />
+                        <Label htmlFor="v-public">Public</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Private" id="v-private" />
+                        <Label htmlFor="v-private">Private</Label>
+                    </div>
+                  </RadioGroup>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="fqdn" className="text-right">FQDN</Label>
