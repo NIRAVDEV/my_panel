@@ -1,7 +1,9 @@
+
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useFormState, useFormStatus } from "react-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -16,19 +18,23 @@ type LoginState = {
   user?: User | null;
 };
 
+const initialState: LoginState = {
+    error: undefined,
+    user: null,
+};
+
+function LoginButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" className="w-full mt-2 bg-primary hover:bg-primary/90" disabled={pending}>
+            {pending ? 'Signing In...' : 'Sign In'}
+        </Button>
+    );
+}
+
 export function LoginForm() {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [state, setState] = useState<LoginState>({ error: undefined, user: null });
-
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    startTransition(async () => {
-      const result = await login(formData);
-      setState(result);
-    });
-  };
+  const [state, formAction] = useFormState(login, initialState);
 
   useEffect(() => {
     if (state.user) {
@@ -45,7 +51,7 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="grid gap-4">
+        <form action={formAction} className="grid gap-4">
           {state.error && (
             <Alert variant="destructive">
                 <Terminal className="h-4 w-4" />
@@ -59,17 +65,16 @@ export function LoginForm() {
               id="email"
               name="email"
               type="email"
-              placeholder="admin@example.com"
+              placeholder="admin@panel.com"
               required
+              defaultValue="admin@panel.com"
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required />
+            <Input id="password" name="password" type="password" required defaultValue="admin010203" />
           </div>
-          <Button type="submit" className="w-full mt-2 bg-primary hover:bg-primary/90" disabled={isPending}>
-            {isPending ? 'Signing In...' : 'Sign In'}
-          </Button>
+          <LoginButton />
         </form>
       </CardContent>
     </Card>
