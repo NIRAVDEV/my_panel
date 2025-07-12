@@ -13,9 +13,7 @@ import * as path from 'path';
 // import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
 // import { summarizeServerActivity } from "@/ai/flows/summarize-server-activity";
 import type { Node, Server, User } from "@/lib/types";
-import { NodeForm } from "@/components/nodes/node-form";
-import { UserForm } from "@/components/users/user-form";
-import { CreateServerForm } from "@/components/panel/create-server-form";
+import { notFound } from "next/navigation";
 
 // AI Actions
 const guideSchema = z.object({
@@ -433,7 +431,7 @@ export async function getUsers(): Promise<User[]> {
             };
             const result = await usersCollection.insertOne(adminUser);
             const finalUsers = [{ ...adminUser, id: result.insertedId.toString() }];
-            delete finalUsers[0].password;
+            delete (finalUsers[0] as any).password;
             return JSON.parse(JSON.stringify(finalUsers));
         }
         
@@ -511,6 +509,9 @@ export async function login(prevState: any, formData: FormData): Promise<LoginSt
 
 export async function getCurrentUser(): Promise<User | null> {
     try {
+        if (!fs.existsSync(SESSION_FILE)) {
+          return null;
+        }
         const email = fs.readFileSync(SESSION_FILE, 'utf-8');
         if (!email) return null;
         
@@ -531,5 +532,3 @@ export async function getCurrentUser(): Promise<User | null> {
         return null;
     }
 }
-
-    
