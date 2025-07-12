@@ -329,7 +329,8 @@ export async function deleteServer(serverId: string): Promise<ActionState> {
 
 // User Actions
 export async function createUser(formData: FormData): Promise<ActionState> {
-    const validatedFields = CreateUserSchema.safeParse(Object.fromEntries(formData.entries()));
+    const data = Object.fromEntries(formData.entries());
+    const validatedFields = CreateUserSchema.safeParse(data);
 
     if (!validatedFields.success) {
         return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
