@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { getAIGuide } from "@/jexactylmc/actions";
 import { CardContent } from "@/components/ui/card";
@@ -37,66 +37,56 @@ function SubmitButton() {
   );
 }
 
-function FormContent({ state }: { state: GuideState }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <>
-      <Textarea
-        name="task"
-        placeholder="e.g., How do I build a simple house? or How to craft a Nether portal?"
-        className="min-h-[100px]"
-        required
-      />
-      <div className="flex justify-end">
-        <SubmitButton />
-      </div>
-
-      <div className="mt-6">
-        {pending && (
-          <div className="space-y-4">
-            <Skeleton className="h-6 w-1/3" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          </div>
-        )}
-
-        {state.error && (
-          <Alert variant="destructive">
-            <Terminal className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{state.error}</AlertDescription>
-          </Alert>
-        )}
-
-        {state.steps && !pending && (
-          <div className="prose prose-sm max-w-none rounded-lg border p-4">
-            <h3 className="flex items-center gap-2 font-semibold">
-              <List className="h-5 w-5 text-primary" />
-              Your Step-by-Step Guide
-            </h3>
-            <ol className="list-decimal pl-5 space-y-2">
-              {state.steps.map((step, index) => (
-                <li key={index}>{step}</li>
-              ))}
-            </ol>
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
 export function GuideGenerator() {
-  const [state, formAction] = useActionState(getAIGuide, initialState);
+  const [state, formAction, isPending] = useActionState(getAIGuide, initialState);
 
   return (
     <CardContent>
       <form action={formAction} className="space-y-4">
-        <FormContent state={state} />
+        <Textarea
+          name="task"
+          placeholder="e.g., How do I build a simple house? or How to craft a Nether portal?"
+          className="min-h-[100px]"
+          required
+        />
+        <div className="flex justify-end">
+          <SubmitButton />
+        </div>
+
+        <div className="mt-6">
+          {isPending && (
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-1/3" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            </div>
+          )}
+
+          {state.error && (
+            <Alert variant="destructive">
+              <Terminal className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{state.error}</AlertDescription>
+            </Alert>
+          )}
+
+          {state.steps && !isPending && (
+            <div className="prose prose-sm max-w-none rounded-lg border p-4">
+              <h3 className="flex items-center gap-2 font-semibold">
+                <List className="h-5 w-5 text-primary" />
+                Your Step-by-Step Guide
+              </h3>
+              <ol className="list-decimal pl-5 space-y-2">
+                {state.steps.map((step, index) => (
+                  <li key={index}>{step}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
       </form>
     </CardContent>
   );
