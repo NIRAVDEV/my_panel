@@ -333,6 +333,11 @@ export async function createUser(formData: FormData): Promise<ActionState> {
 
     try {
         const db = await getDb();
+        const existingUser = await db.collection("users").findOne({ email: email });
+        if (existingUser) {
+            return { success: false, error: "A user with this email address already exists." };
+        }
+
         await db.collection("users").insertOne({
             name: name,
             email: email,
@@ -361,6 +366,11 @@ export async function updateUser(userId: string, formData: FormData): Promise<Ac
 
     try {
         const db = await getDb();
+        const existingUser = await db.collection("users").findOne({ email: email });
+        if (existingUser && existingUser._id.toString() !== userId) {
+            return { success: false, error: "This email address is already in use by another account." };
+        }
+
         await db.collection("users").updateOne(
             { _id: new ObjectId(userId) },
             {
