@@ -419,10 +419,10 @@ export async function getUsers(): Promise<User[]> {
         const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
         
         if (users.length === 0) {
-            const adminPassword = await bcrypt.hash('admin010203', 10);
+            const adminPassword = await bcrypt.hash('admin123', 10);
             const adminUser = {
                 name: "Admin",
-                email: "admin@panel.com",
+                email: "admin@admin.com",
                 password: adminPassword,
                 avatar: "https://placehold.co/40x40.png",
                 fallback: "A",
@@ -446,7 +446,7 @@ export async function deleteUser(userId: string): Promise<ActionState> {
     try {
         const db = await getDb();
         const userDoc = await db.collection("users").findOne({ _id: new ObjectId(userId) });
-        if (userDoc && userDoc.email === 'admin@panel.com') {
+        if (userDoc && userDoc.email === 'admin@admin.com') {
             console.error("Attempted to delete protected admin user.");
             return { success: false, error: "Cannot delete the default admin user." };
         }

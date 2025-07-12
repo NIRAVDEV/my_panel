@@ -65,7 +65,7 @@ export function LoginForm() {
               type="email"
               placeholder="admin@panel.com"
               required
-              defaultValue="admin@panel.com"
+              defaultValue="admin@admin.com"
             />
           </div>
           <div className="grid gap-2">
