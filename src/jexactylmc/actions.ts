@@ -13,7 +13,7 @@ import * as path from 'path';
 // import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
 // import { summarizeServerActivity } from "@/ai/flows/summarize-server-activity";
 import type { User } from "@/lib/types";
-import { CreateUserSchema, UpdateUserSchema } from "@/lib/types";
+import { CreateUserSchema, UpdateUserSchema, UserSchema } from "@/lib/types";
 import { notFound } from "next/navigation";
 
 // AI Actions
@@ -332,9 +332,10 @@ export async function createUser(formData: FormData): Promise<ActionState> {
     const validatedFields = CreateUserSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
+        console.error('Validation Errors:', validatedFields.error.flatten().fieldErrors);
         return { 
             success: false, 
-            error: "Invalid fields.", 
+            error: "Invalid fields. Please check your input and try again.", 
             errors: validatedFields.error.flatten().fieldErrors 
         };
     }

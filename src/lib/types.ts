@@ -33,10 +33,7 @@ export const UserSchema = z.object({
   id: z.string(), // Document ID from MongoDB
   name: z.string(),
   email: z.string().email(),
-  avatar: z.string().url(),
-  fallback: z.string(),
   role: z.enum(["Admin", "User"]),
-  avatarHint: z.string().optional(),
 });
 
 // Infer the User type from the Zod schema
