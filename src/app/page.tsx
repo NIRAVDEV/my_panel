@@ -1,7 +1,11 @@
 import { LoginForm } from "@/components/login-form";
+import { getUsers } from "@/jexactylmc/actions";
 import { Gamepad2 } from "lucide-react";
 
 export default async function Home() {
+  // Ensure the default user is created if the DB is empty.
+  await getUsers();
+  
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="flex flex-col items-center space-y-2 mb-8">
