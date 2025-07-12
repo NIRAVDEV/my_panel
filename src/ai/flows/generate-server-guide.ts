@@ -1,3 +1,4 @@
+
 // This file is machine-generated - edit with caution!
 'use server';
 /**
@@ -8,7 +9,7 @@
  * - GenerateServerGuideOutput - The return type for the generateServerGuide function.
  */
 
-import {ai} from '@/ai/genkit';
+// import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateServerGuideInputSchema = z.object({
@@ -22,30 +23,31 @@ const GenerateServerGuideOutputSchema = z.object({
 export type GenerateServerGuideOutput = z.infer<typeof GenerateServerGuideOutputSchema>;
 
 export async function generateServerGuide(input: GenerateServerGuideInput): Promise<GenerateServerGuideOutput> {
-  return generateServerGuideFlow(input);
+  // return generateServerGuideFlow(input);
+  return { steps: [] };
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateServerGuidePrompt',
-  input: {schema: GenerateServerGuideInputSchema},
-  output: {schema: GenerateServerGuideOutputSchema},
-  prompt: `You are a helpful AI assistant in a Minecraft server. A player is asking for guidance on how to perform a specific task in the game.
+// const prompt = ai.definePrompt({
+//   name: 'generateServerGuidePrompt',
+//   input: {schema: GenerateServerGuideInputSchema},
+//   output: {schema: GenerateServerGuideOutputSchema},
+//   prompt: `You are a helpful AI assistant in a Minecraft server. A player is asking for guidance on how to perform a specific task in the game.
 
-  Task: {{{task}}}
+//   Task: {{{task}}}
 
-  Provide step-by-step instructions on how to perform the task. Be clear and concise.
-  Format the output as a numbered list of steps.
-  `,
-});
+//   Provide step-by-step instructions on how to perform the task. Be clear and concise.
+//   Format the output as a numbered list of steps.
+//   `,
+// });
 
-const generateServerGuideFlow = ai.defineFlow(
-  {
-    name: 'generateServerGuideFlow',
-    inputSchema: GenerateServerGuideInputSchema,
-    outputSchema: GenerateServerGuideOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+// const generateServerGuideFlow = ai.defineFlow(
+//   {
+//     name: 'generateServerGuideFlow',
+//     inputSchema: GenerateServerGuideInputSchema,
+//     outputSchema: GenerateServerGuideOutputSchema,
+//   },
+//   async input => {
+//     const {output} = await prompt(input);
+//     return output!;
+//   }
+// );

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition } from "react";
@@ -86,7 +87,7 @@ export function ActivityFeed() {
           )}
 
           {summaryState && (summaryState.summary || summaryState.error) && (
-            <Alert className="mt-4">
+            <Alert className="mt-4" variant={summaryState.error ? 'destructive' : 'default'}>
                 <Bot className="h-4 w-4" />
                 <AlertTitle>{summaryState.error ? "Error" : "AI Summary"}</AlertTitle>
                 <AlertDescription>

@@ -1,8 +1,9 @@
+
 // Summarizes recent server activity to identify trends or issues for server admins.
 
 'use server';
 
-import {ai} from '@/ai/genkit';
+// import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SummarizeServerActivityInputSchema = z.object({
@@ -25,32 +26,33 @@ export type SummarizeServerActivityOutput =
 export async function summarizeServerActivity(
   input: SummarizeServerActivityInput
 ): Promise<SummarizeServerActivityOutput> {
-  return summarizeServerActivityFlow(input);
+  // return summarizeServerActivityFlow(input);
+  return { summary: '', trends: '' };
 }
 
-const summarizeServerActivityPrompt = ai.definePrompt({
-  name: 'summarizeServerActivityPrompt',
-  input: {schema: SummarizeServerActivityInputSchema},
-  output: {schema: SummarizeServerActivityOutputSchema},
-  prompt: `You are an expert server administrator analyzing server logs.
+// const summarizeServerActivityPrompt = ai.definePrompt({
+//   name: 'summarizeServerActivityPrompt',
+//   input: {schema: SummarizeServerActivityInputSchema},
+//   output: {schema: SummarizeServerActivityOutputSchema},
+//   prompt: `You are an expert server administrator analyzing server logs.
 
-  Summarize the following server activity log, identifying key trends and issues:
+//   Summarize the following server activity log, identifying key trends and issues:
 
-  Server Activity Log:
-  {{serverActivityLog}}
+//   Server Activity Log:
+//   {{serverActivityLog}}
 
-  Summary:
-  Trends and Issues:`,
-});
+//   Summary:
+//   Trends and Issues:`,
+// });
 
-const summarizeServerActivityFlow = ai.defineFlow(
-  {
-    name: 'summarizeServerActivityFlow',
-    inputSchema: SummarizeServerActivityInputSchema,
-    outputSchema: SummarizeServerActivityOutputSchema,
-  },
-  async input => {
-    const {output} = await summarizeServerActivityPrompt(input);
-    return output!;
-  }
-);
+// const summarizeServerActivityFlow = ai.defineFlow(
+//   {
+//     name: 'summarizeServerActivityFlow',
+//     inputSchema: SummarizeServerActivityInputSchema,
+//     outputSchema: SummarizeServerActivityOutputSchema,
+//   },
+//   async input => {
+//     const {output} = await summarizeServerActivityPrompt(input);
+//     return output!;
+//   }
+// );

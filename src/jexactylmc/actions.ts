@@ -9,9 +9,9 @@ import bcrypt from 'bcrypt';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import { generateServerGuide } from "@/ai/flows/generate-server-guide";
-import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
-import { summarizeServerActivity } from "@/ai/flows/summarize-server-activity";
+// import { generateServerGuide } from "@/ai/flows/generate-server-guide";
+// import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
+// import { summarizeServerActivity } from "@/ai/flows/summarize-server-activity";
 import type { Node, Server, User } from "@/lib/types";
 
 // AI Actions
@@ -25,22 +25,22 @@ type GuideState = {
 };
 
 export async function getAIGuide(prevState: any, formData: FormData): Promise<GuideState> {
-  const validatedFields = guideSchema.safeParse({
-    task: formData.get("task"),
-  });
+  // const validatedFields = guideSchema.safeParse({
+  //   task: formData.get("task"),
+  // });
 
-  if (!validatedFields.success) {
-    return {
-      error: "Please enter a task description.",
-    };
-  }
+  // if (!validatedFields.success) {
+  //   return {
+  //     error: "Please enter a task description.",
+  //   };
+  // }
 
-  try {
-    const result = await generateServerGuide({ task: validatedFields.data.task });
-    return { steps: result.steps };
-  } catch (error) {
-    return { error: "Failed to generate guide. The AI model might be unavailable. Please try again later." };
-  }
+  // try {
+  //   const result = await generateServerGuide({ task: validatedFields.data.task });
+  //   return { steps: result.steps };
+  // } catch (error) {
+    return { error: "AI features are temporarily disabled. Please try again later." };
+  // }
 }
 
 type SummaryState = {
@@ -50,12 +50,12 @@ type SummaryState = {
 };
 
 export async function summarizeActivity(serverActivityLog: string): Promise<SummaryState> {
-    try {
-        const result = await summarizeServerActivity({ serverActivityLog });
-        return { summary: result.summary, trends: result.trends };
-    } catch (error) {
-        return { error: "Failed to generate summary. The AI model might be unavailable. Please try again later." };
-    }
+    // try {
+    //     const result = await summarizeServerActivity({ serverActivityLog });
+    //     return { summary: result.summary, trends: result.trends };
+    // } catch (error) {
+        return { error: "AI features are temporarily disabled. Please try again later." };
+    // }
 }
 
 type InstallerGuideState = {
@@ -64,13 +64,13 @@ type InstallerGuideState = {
 }
 
 export async function getNodeInstallerGuide(nodeId: string, panelUrl: string, os: "debian" | "nixos"): Promise<InstallerGuideState> {
-    try {
-        const result = await generateNodeInstaller({ nodeId, panelUrl, os });
-        return { guide: result.guide };
-    } catch (error) {
-        console.error(error);
-        return { error: "Failed to generate installation guide. The AI model might be unavailable. Please try again later." };
-    }
+    // try {
+    //     const result = await generateNodeInstaller({ nodeId, panelUrl, os });
+    //     return { guide: result.guide };
+    // } catch (error) {
+    //     console.error(error);
+        return { error: "AI features are temporarily disabled. Please try again later." };
+    // }
 }
 
 // MongoDB Helper
