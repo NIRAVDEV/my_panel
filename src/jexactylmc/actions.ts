@@ -12,7 +12,7 @@ import * as path from 'path';
 // import { generateServerGuide } from "@/ai/flows/generate-server-guide";
 // import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
 // import { summarizeServerActivity } from "@/ai/flows/summarize-server-activity";
-import type { Node, Server, User } from "@/lib/types";
+import type { User } from "@/lib/types";
 import { CreateUserSchema, UpdateUserSchema } from "@/lib/types";
 import { notFound } from "next/navigation";
 
@@ -329,14 +329,17 @@ export async function deleteServer(serverId: string): Promise<ActionState> {
 
 // User Actions
 export async function createUser(formData: FormData): Promise<ActionState> {
-    const data = Object.fromEntries(formData.entries());
-    const validatedFields = CreateUserSchema.safeParse(data);
+    const validatedFields = CreateUserSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
-        return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
+        return { 
+            success: false, 
+            error: "Invalid fields.", 
+            errors: validatedFields.error.flatten().fieldErrors 
+        };
     }
-
-    const { email, role, name, password } = validatedFields.data;
+    
+    const { name, email, role, password } = validatedFields.data;
     
     try {
         const db = await getDb();
