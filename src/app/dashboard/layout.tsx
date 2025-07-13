@@ -38,9 +38,8 @@ export default async function DashboardLayout({
 }) {
     const user = await getCurrentUser();
 
-    if (!user) {
-        // This case should ideally redirect to login, but for now, we'll show not found.
-        // In a real app with auth, a middleware would handle this.
+    // More robust check to ensure user and its properties exist
+    if (!user || !user.name || !user.email) {
         redirect('/');
     }
 
@@ -149,5 +148,3 @@ export default async function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    

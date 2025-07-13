@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useActionState, useEffect } from "react";
+import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -22,17 +23,18 @@ const initialState: LoginState = {
     user: null,
 };
 
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" className="w-full mt-2 bg-primary hover:bg-primary/90" disabled={pending}>
+            {pending ? 'Signing In...' : 'Sign In'}
+        </Button>
+    );
+}
+
 export function LoginForm() {
   const router = useRouter();
-  const [state, setState] = useState<LoginState>(initialState);
-  const [isPending, startTransition] = useTransition();
-
-  const handleSubmit = (formData: FormData) => {
-    startTransition(async () => {
-      const result = await login(formData);
-      setState(result);
-    });
-  };
+  const [state, formAction, isPending] = useActionState(login, initialState);
 
   useEffect(() => {
     if (state.user) {
@@ -49,7 +51,7 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={handleSubmit} className="grid gap-4">
+        <form action={formAction} className="grid gap-4">
           {state.error && (
             <Alert variant="destructive">
                 <Terminal className="h-4 w-4" />
@@ -71,9 +73,7 @@ export function LoginForm() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" name="password" type="password" required />
           </div>
-          <Button type="submit" className="w-full mt-2 bg-primary hover:bg-primary/90" disabled={isPending}>
-            {isPending ? 'Signing In...' : 'Sign In'}
-          </Button>
+          <SubmitButton />
         </form>
       </CardContent>
     </Card>
