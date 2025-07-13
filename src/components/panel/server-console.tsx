@@ -13,24 +13,29 @@ export function ServerConsole({ serverId }: { serverId: string }) {
 
     useEffect(() => {
         const fetchLogs = async () => {
-            // For the first load, show the skeleton
-            if (logs.length === 0) {
-                setIsLoading(true);
-            }
             const fetchedLogs = await getServerLogs(serverId);
             setLogs(fetchedLogs);
-            setIsLoading(false);
+            if (isLoading) {
+                setIsLoading(false);
+            }
         };
 
+        // Initial fetch
         fetchLogs();
-        const interval = setInterval(fetchLogs, 5000); // Refresh logs every 5 seconds
 
+        // Set up interval to fetch logs periodically
+        const interval = setInterval(fetchLogs, 5000);
+
+        // Clean up interval on component unmount
         return () => clearInterval(interval);
-    }, [serverId, logs.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [serverId]);
 
     useEffect(() => {
         // Scroll to the bottom of the console when logs update
-        consoleEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (consoleEndRef.current) {
+            consoleEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
     }, [logs]);
 
     return (
@@ -41,7 +46,7 @@ export function ServerConsole({ serverId }: { serverId: string }) {
             </CardHeader>
             <CardContent>
                 <div className="bg-muted aspect-video rounded-md p-4 text-sm font-mono text-muted-foreground overflow-auto h-[400px]">
-                    {isLoading && logs.length === 0 ? (
+                    {isLoading ? (
                         <div className="space-y-2">
                             <Skeleton className="h-4 w-full" />
                             <Skeleton className="h-4 w-3/4" />
