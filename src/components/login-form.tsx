@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { useFormStatus } from "react-dom";
+import { useEffect } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -34,7 +34,7 @@ function SubmitButton() {
 
 export function LoginForm() {
   const router = useRouter();
-  const [state, formAction, isPending] = useActionState(login, initialState);
+  const [state, formAction] = useFormState(login, initialState);
 
   useEffect(() => {
     if (state.user) {
