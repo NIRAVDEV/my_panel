@@ -70,12 +70,31 @@ type NodeConfigState = {
 
 export async function getAINodeConfig(node: Node): Promise<NodeConfigState> {
     const panelUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    let updatedNode = { ...node };
+
+    // If node is missing credentials (e.g., it's an older node), generate and save them.
+    if (!node.uuid || !node.tokenId || !node.token) {
+        const db = await getDb();
+        const updates: Partial<Node> = {};
+        if (!node.uuid) updates.uuid = randomUUID();
+        if (!node.tokenId) updates.tokenId = randomBytes(4).toString('hex');
+        if (!node.token) updates.token = randomBytes(20).toString('hex');
+
+        await db.collection("nodes").updateOne(
+            { _id: new ObjectId(node.id) },
+            { $set: updates }
+        );
+        updatedNode = { ...node, ...updates };
+        revalidatePath(`/dashboard/nodes/${node.id}`);
+    }
+
     try {
-        const result = await generateNodeConfig({ ...node, panelUrl });
+        const result = await generateNodeConfig({ ...updatedNode, panelUrl });
         return { config: result.config };
     } catch (e: any) {
         console.error("Error generating AI node config:", e);
-        return { error: e.message || "An unexpected error occurred while generating the configuration." };
+        const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+        return { error: `Could not generate configuration\n${errorMessage}` };
     }
 }
 
@@ -286,20 +305,10 @@ export async function createServer(formData: FormData): Promise<ActionState> {
             nodeId: new ObjectId(nodeId),
             status: "Offline" as const,
             players: { current: 0, max: 100 },
-            subusers: [],
+            subusers: [{ userId: currentUser.id, permissions: ["Full Access"] }],
         };
 
-        const result = await db.collection("servers").insertOne(serverData);
-        
-        // Add the creator as the first subuser with full permissions
-        const subuserData = {
-            userId: currentUser.id,
-            permissions: ["Full Access"]
-        };
-        await db.collection("servers").updateOne(
-            { _id: result.insertedId },
-            { $push: { subusers: subuserData } }
-        );
+        await db.collection("servers").insertOne(serverData);
 
         await db.collection("nodes").updateOne(
             { _id: new ObjectId(nodeId) },
