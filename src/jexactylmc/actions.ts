@@ -434,6 +434,7 @@ export async function getUsers(): Promise<User[]> {
             );
         }
         
+        // Refetch all users after ensuring the admin user exists.
         const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
 
         return JSON.parse(JSON.stringify(users.map(user => ({ ...user, id: user._id.toString() }))));
