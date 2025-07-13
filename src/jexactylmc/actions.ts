@@ -421,11 +421,9 @@ export async function getUsers(): Promise<User[]> {
     try {
         const db = await getDb();
         const usersCollection = db.collection("users");
-        
-        // Find admin user first
+
         const adminUser = await usersCollection.findOne({ email: "admin@admin.com" });
 
-        // If admin user doesn't exist, create it
         if (!adminUser) {
             const hashedPassword = await bcrypt.hash("admin123", 10);
             await usersCollection.insertOne({
@@ -439,7 +437,6 @@ export async function getUsers(): Promise<User[]> {
             });
         }
         
-        // Fetch all users after ensuring admin exists
         const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
         return JSON.parse(JSON.stringify(users.map(user => ({ ...user, id: user._id.toString() }))));
     } catch (error) {
