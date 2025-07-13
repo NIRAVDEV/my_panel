@@ -1,7 +1,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, Cog, HardDrive, List, Server, FileText } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { getNodeById } from "@/jexactylmc/actions";
