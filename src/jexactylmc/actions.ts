@@ -411,12 +411,10 @@ export async function getUsers(): Promise<User[]> {
     try {
         const db = await getDb();
         const usersCollection = db.collection("users");
-        
-        const adminUser = await usersCollection.findOne({ email: "admin@admin.com" });
-        const hashedPassword = await bcrypt.hash("admin123", 10);
+        let adminUser = await usersCollection.findOne({ email: "admin@admin.com" });
 
         if (!adminUser) {
-            // If admin user doesn't exist, create it
+            const hashedPassword = await bcrypt.hash("admin123", 10);
             await usersCollection.insertOne({
                 name: "Admin",
                 email: "admin@admin.com",
@@ -426,17 +424,9 @@ export async function getUsers(): Promise<User[]> {
                 fallback: "A",
                 avatarHint: "user portrait"
             });
-        } else {
-            // If admin user exists, ensure the password is correct
-            await usersCollection.updateOne(
-                { _id: adminUser._id },
-                { $set: { password: hashedPassword } }
-            );
         }
         
-        // Refetch all users after ensuring the admin user exists.
         const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
-
         return JSON.parse(JSON.stringify(users.map(user => ({ ...user, id: user._id.toString() }))));
     } catch (error) {
         console.error("Error fetching/ensuring users: ", error);
@@ -496,7 +486,6 @@ export async function login(prevState: LoginState, formData: FormData): Promise<
             return { error: "Invalid credentials." };
         }
         
-        // Set session cookie
         cookies().set('session_userId', user._id.toString(), {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
