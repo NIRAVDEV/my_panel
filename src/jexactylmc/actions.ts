@@ -68,11 +68,9 @@ type NodeConfigState = {
     error?: string;
 }
 
-export async function getAINodeConfig(node: Node): Promise<NodeConfigState> {
-    const panelUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+export async function getAINodeConfig(node: Node, panelUrl: string): Promise<NodeConfigState> {
     let updatedNode = { ...node };
 
-    // If node is missing credentials (e.g., it's an older node), generate and save them.
     if (!node.uuid || !node.tokenId || !node.token) {
         const db = await getDb();
         const updates: Partial<Node> = {};

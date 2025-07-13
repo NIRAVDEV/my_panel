@@ -23,7 +23,8 @@ export function NodeConfiguration({ node }: { node: Node }) {
 
   useEffect(() => {
     startTransition(async () => {
-      const result = await getAINodeConfig(node);
+      const panelUrl = window.location.origin;
+      const result = await getAINodeConfig(node, panelUrl);
       setState(result);
       if (result.error) {
         toast({
