@@ -10,17 +10,27 @@ import bcrypt from 'bcrypt';
 
 import type { Node, Server, User } from "@/lib/types";
 import { CreateUserSchema, UpdateUserSchema } from "@/lib/types";
+import { generateGuide } from "@/ai/flows/generate-guide-flow";
 
-// AI Actions (Temporarily Disabled)
+// AI Actions
 type GuideState = {
   steps?: string[];
   error?: string;
 };
 
 export async function getAIGuide(prevState: any, formData: FormData): Promise<GuideState> {
-  console.log("getAIGuide called. AI features are disabled.");
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return { error: "AI features are temporarily disabled." };
+  const task = formData.get("task") as string;
+  if (!task) {
+    return { error: "Please describe the task you need help with." };
+  }
+
+  try {
+    const result = await generateGuide({ task });
+    return { steps: result.steps };
+  } catch (e: any) {
+    console.error("Error generating AI guide:", e);
+    return { error: e.message || "An unexpected error occurred while generating the guide." };
+  }
 }
 
 type SummaryState = {
@@ -460,6 +470,7 @@ const loginSchema = z.object({
 type LoginState = {
   error?: string;
   user?: User | null;
+  success?: boolean;
 };
 
 
@@ -493,11 +504,7 @@ export async function login(prevState: LoginState, formData: FormData): Promise<
             path: '/',
         });
         
-        const userToReturn = { ...user, id: user._id.toString() };
-        delete (userToReturn as any).password;
-
-
-        return { user: JSON.parse(JSON.stringify(userToReturn)) };
+        return { success: true };
     } catch (error) {
         console.error("Login error:", error);
         return { error: "An unexpected error occurred." };
