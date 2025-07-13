@@ -776,5 +776,3 @@ export async function removeSubuser(serverId: string, userId: string): Promise<A
         return { success: false, error: "Failed to remove subuser." };
     }
 }
-
-    
