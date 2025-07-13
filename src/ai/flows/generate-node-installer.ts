@@ -34,22 +34,18 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert Linux system administrator creating a setup guide for a Pterodactyl Wings daemon.
 The user needs a shell script guide to set up a new server node.
 
-The operating system is: {{{os}}}
 The control panel URL is: {{{panelUrl}}}
 The node ID is: {{{nodeId}}}
 
-Generate a comprehensive, step-by-step guide. The guide should be a shell script that can be mostly copy-pasted.
+Generate a comprehensive, step-by-step guide as a shell script.
 
 **Instructions for the guide:**
-1.  **Introduction**: Start with a clear comment explaining the script's purpose for the specified OS.
-2.  **Install Dependencies**:
-    *   For **Debian/Ubuntu**: Include commands to 'apt-get update' and install 'docker.io' and 'docker-compose'.
-    *   For **NixOS**: Explain that Docker is usually configured in 'configuration.nix' and provide a sample Nix configuration snippet to enable Docker. Advise the user to run 'nixos-rebuild switch'.
-3.  **Create Directories**: Include commands to create the necessary Pterodactyl directories: '/etc/pterodactyl' and '/var/lib/pterodactyl'.
-4.  **Download Config**: Provide a 'curl' command to download the 'config.yml' file for the node. The URL format is '{{{panelUrl}}}/api/nodes/{{{nodeId}}}/config'. The user should place it in '/etc/pterodactyl/config.yml'.
-5.  **Docker Compose**: Provide the contents of a 'docker-compose.yml' file for Wings. Use the 'ghcr.io/pterodactyl/wings:v1.6.1' image. The user should save this as '/etc/pterodactyl/docker-compose.yml'.
-6.  **Start Wings**: Include the command 'docker-compose -f /etc/pterodactyl/docker-compose.yml up -d' to start the daemon.
-7.  **Conclusion**: End with a confirmation message telling the user the daemon should be running and they can check its status on the panel.
+1.  **Introduction**: Start with a clear comment explaining the script's purpose.
+2.  **Create Directories**: Include commands to create the necessary Pterodactyl directory: '/etc/pterodactyl'.
+3.  **Download Config**: Provide a 'curl' command to download the 'config.yml' for the node and save it to '/etc/pterodactyl/config.yml'. The URL format is '{{{panelUrl}}}/api/nodes/{{{nodeId}}}/config'.
+4.  **Download Docker Compose**: Provide a 'curl' command to download the 'docker-compose.yml' from '{{{panelUrl}}}/docker-compose.yml' and save it to '/etc/pterodactyl/docker-compose.yml'.
+5.  **Run Installer**: Instruct the user to run the official installation script with the command: 'bash <(curl -s https://raw.githubusercontent.com/JishnuTheGamer/pterodactyl/blob/main/wings-jtg)'
+6.  **Conclusion**: End with a confirmation message telling the user the daemon should be running and they can check its status on the panel.
 
 Ensure the output is a single, well-formatted script within the 'guide' field. Use comments (#) to explain each step.
 `,
