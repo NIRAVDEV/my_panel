@@ -1,22 +1,20 @@
+
 'use server';
 /**
  * @fileOverview A flow for generating Pterodactyl node configuration files.
  *
  * - generateNodeConfig - A function that takes node details and returns a YAML config.
- * - GenerateNodeConfigInput - The input type for the function.
- * - GenerateNodeConfigOutput - The return type for the function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
 const GenerateNodeConfigInputSchema = z.object({
-  name: z.string().describe("The name of the node."),
+  uuid: z.string().describe("The UUID of the node."),
+  tokenId: z.string().describe("The token ID for the daemon."),
+  token: z.string().describe("The authentication token for the daemon."),
   fqdn: z.string().describe("The Fully Qualified Domain Name of the node."),
-  memory: z.number().describe("The total memory available on the node in MB."),
-  disk: z.number().describe("The total disk space available on the node in MB."),
-  portsStart: z.number().describe("The starting port for the allocation range."),
-  portsEnd: z.number().describe("The ending port for the allocation range."),
+  panelUrl: z.string().url().describe("The URL of the control panel."),
 });
 type GenerateNodeConfigInput = z.infer<typeof GenerateNodeConfigInputSchema>;
 
@@ -28,35 +26,44 @@ type GenerateNodeConfigOutput = z.infer<
 >;
 
 export async function generateNodeConfig(
-  input: Omit<GenerateNodeConfigInput, 'memory' | 'disk'> & { memory: number, disk: number }
+  input: Omit<GenerateNodeConfigInput, 'memory' | 'disk'> & { memory: number, disk: number, panelUrl: string }
 ): Promise<GenerateNodeConfigOutput> {
-  // Convert GB to MB for the prompt, which the AI will handle better
-  const inputInMB = {
-      ...input,
-      memory: input.memory * 1024,
-      disk: input.disk * 1024
-  };
-  return generateNodeConfigFlow(inputInMB);
+  return generateNodeConfigFlow(input);
 }
 
 const prompt = ai.definePrompt({
   name: 'generateNodeConfigPrompt',
   input: {schema: GenerateNodeConfigInputSchema},
   output: {schema: GenerateNodeConfigOutputSchema},
-  prompt: `You are a helpful assistant who is an expert in configuring Pterodactyl server nodes.
-Your task is to generate a 'config.yml' file for a new Pterodactyl daemon (wings).
+  prompt: `You are a helpful assistant creating a 'config.yml' for a Pterodactyl daemon (wings).
+Generate the YAML configuration using the exact format below. Do not add any extra fields or comments.
 
-Use the following details for the node:
-- FQDN: {{{fqdn}}}
-- Total Memory: {{{memory}}} MB
-- Total Disk Space: {{{disk}}} MB
-- Port Range: {{{portsStart}}}-{{{portsEnd}}}
+**Template:**
+\`\`\`yaml
+debug: false
+uuid: {{{uuid}}}
+token_id: {{{tokenId}}}
+token: {{{token}}}
+api:
+  host: 0.0.0.0
+  port: 8080
+  ssl:
+    enabled: true
+    cert: /etc/letsencrypt/live/{{{fqdn}}}/fullchain.pem
+    key: /etc/letsencrypt/live/{{{fqdn}}}/privkey.pem
+  upload_limit: 100
+system:
+  data: /var/lib/pterodactyl/volumes
+  sftp:
+    bind_port: 2022
+allowed_mounts: []
+remote: '{{{panelUrl}}}'
+\`\`\`
 
-Generate the complete YAML configuration. The memory and disk values are already provided in MB.
-Ensure the output is only the raw YAML content, without any surrounding text or markdown formatting.
-The scheme for the remote URL should be https. The daemon should listen on port 8080 and use SSL.
-The sftp port should be 2022.
-Set the 'name' field in the config to be the same as the node's FQDN for consistency.`,
+**Instructions:**
+- Replace the placeholders \`{{{uuid}}}\`, \`{{{tokenId}}}\`, \`{{{token}}}\`, \`{{{fqdn}}}\`, and \`{{{panelUrl}}}\` with the values provided.
+- The output must be only the raw YAML content inside the 'config' field.
+`,
 });
 
 const generateNodeConfigFlow = ai.defineFlow(
@@ -70,6 +77,8 @@ const generateNodeConfigFlow = ai.defineFlow(
     if (!output) {
       throw new Error('The AI did not return a valid configuration.');
     }
-    return output;
+    // Clean up potential markdown formatting from the AI response
+    const cleanedConfig = output.config.replace(/```yaml\n/g, '').replace(/```/g, '');
+    return { config: cleanedConfig };
   }
 );

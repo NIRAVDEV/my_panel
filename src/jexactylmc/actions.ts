@@ -7,6 +7,7 @@ import { cookies } from 'next/headers';
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import bcrypt from 'bcrypt';
+import { randomUUID, randomBytes } from 'crypto';
 
 import type { Node, Server, Subuser, User } from "@/lib/types";
 import { CreateUserSchema, UpdateUserSchema } from "@/lib/types";
@@ -68,8 +69,9 @@ type NodeConfigState = {
 }
 
 export async function getAINodeConfig(node: Node): Promise<NodeConfigState> {
+    const panelUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     try {
-        const result = await generateNodeConfig(node);
+        const result = await generateNodeConfig({ ...node, panelUrl });
         return { config: result.config };
     } catch (e: any) {
         console.error("Error generating AI node config:", e);
@@ -136,6 +138,9 @@ export async function createNode(formData: FormData): Promise<ActionState> {
             ports: { start: portsStart, end: portsEnd },
             servers: 0,
             status: "Offline",
+            uuid: randomUUID(),
+            tokenId: randomBytes(4).toString('hex'),
+            token: randomBytes(20).toString('hex'),
         });
         revalidatePath("/dashboard/nodes");
         return { success: true };

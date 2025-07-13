@@ -34,6 +34,9 @@ export type Node = {
   os: "debian" | "nixos";
   status: "Online" | "Offline";
   visibility: "Public" | "Private";
+  uuid: string;
+  tokenId: string;
+  token: string;
 };
 
 // Represents a user object as stored in the database (password is not included)
