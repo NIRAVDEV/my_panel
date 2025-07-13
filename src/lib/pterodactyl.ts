@@ -42,6 +42,11 @@ export class PterodactylClient {
         return response.json();
       }
       
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return response.json();
+      }
+
       return response.text(); // For logs, which are returned as plain text
     } catch (error: any) {
       console.error(`Failed to connect to Pterodactyl daemon at ${this.baseUrl}${endpoint}`, error);

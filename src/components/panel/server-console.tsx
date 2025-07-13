@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getServerLogs } from "@/jexactylmc/actions";
 import { Skeleton } from "../ui/skeleton";
@@ -11,15 +11,21 @@ export function ServerConsole({ serverId }: { serverId: string }) {
     const [isLoading, setIsLoading] = useState(true);
     const consoleEndRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const fetchLogs = async () => {
+    const fetchLogs = useCallback(async () => {
+        try {
             const fetchedLogs = await getServerLogs(serverId);
             setLogs(fetchedLogs);
+        } catch (error) {
+            console.error("Failed to fetch logs:", error);
+            setLogs(prevLogs => [...prevLogs, "[ERROR] Could not connect to the server to fetch logs."]);
+        } finally {
             if (isLoading) {
                 setIsLoading(false);
             }
-        };
+        }
+    }, [serverId, isLoading]);
 
+    useEffect(() => {
         // Initial fetch
         fetchLogs();
 
@@ -28,8 +34,7 @@ export function ServerConsole({ serverId }: { serverId: string }) {
 
         // Clean up interval on component unmount
         return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [serverId]);
+    }, [fetchLogs]);
 
     useEffect(() => {
         // Scroll to the bottom of the console when logs update
