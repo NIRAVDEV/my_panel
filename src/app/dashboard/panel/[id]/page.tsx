@@ -2,12 +2,12 @@
 
 import { getServerById } from "@/jexactylmc/actions";
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Cpu, HardDrive, Users } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
-import { ResourceCharts } from "@/components/dashboard/resource-charts";
 import { Badge } from "@/components/ui/badge";
 import { ServerConsole } from "@/components/panel/server-console";
+import { ServerSetupGuide } from "@/components/panel/server-setup-guide";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default async function ServerOverviewPage({ params }: { params: { id: string } }) {
   const server = await getServerById(params.id);
@@ -41,9 +41,14 @@ export default async function ServerOverviewPage({ params }: { params: { id: str
         />
       </div>
 
-      <ServerConsole serverId={server.id} />
-
-      <ResourceCharts />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+            <ServerConsole serverId={server.id} />
+        </div>
+        <div>
+            <ServerSetupGuide server={server} />
+        </div>
+      </div>
     </>
   );
 }

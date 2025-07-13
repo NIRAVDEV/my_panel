@@ -1,10 +1,11 @@
 
 
+
 import { getServerById } from "@/jexactylmc/actions";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, Play, RefreshCw, Square } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Server } from "@/lib/types";
 import { ServerNav } from "@/components/panel/server-nav";
