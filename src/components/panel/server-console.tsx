@@ -13,7 +13,10 @@ export function ServerConsole({ serverId }: { serverId: string }) {
 
     useEffect(() => {
         const fetchLogs = async () => {
-            setIsLoading(true);
+            // For the first load, show the skeleton
+            if (logs.length === 0) {
+                setIsLoading(true);
+            }
             const fetchedLogs = await getServerLogs(serverId);
             setLogs(fetchedLogs);
             setIsLoading(false);
@@ -23,7 +26,7 @@ export function ServerConsole({ serverId }: { serverId: string }) {
         const interval = setInterval(fetchLogs, 5000); // Refresh logs every 5 seconds
 
         return () => clearInterval(interval);
-    }, [serverId]);
+    }, [serverId, logs.length]);
 
     useEffect(() => {
         // Scroll to the bottom of the console when logs update

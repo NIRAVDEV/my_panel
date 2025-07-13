@@ -1,6 +1,11 @@
 
 import { z } from 'zod';
 
+export type SubuserMeta = {
+  userId: string;
+  permissions: string[];
+};
+
 export type Server = {
   id: string;
   name: string;
@@ -14,7 +19,7 @@ export type Server = {
   storage: number; // in GB
   type: "Vanilla" | "Paper" | "Spigot" | "Purpur" | "Forge" | "Fabric" | "BungeeCord";
   nodeId: string;
-  subusers: string[]; // Array of user IDs
+  subusers: SubuserMeta[];
 };
 
 export type Node = {
@@ -40,7 +45,6 @@ export const UserSchema = z.object({
   avatar: z.string().optional(),
   fallback: z.string().optional(),
   avatarHint: z.string().optional(),
-  subuserOf: z.array(z.string()).optional(), // Array of server IDs
 });
 
 export type User = z.infer<typeof UserSchema>;
@@ -66,5 +70,5 @@ export type Subuser = {
   email: string;
   avatar: string;
   fallback: string;
-  permissions: string[]; // e.g., ["control.start", "control.stop"]
+  permissions: string[]; // e.g., ["Full Access"] or ["Limited Access"]
 };

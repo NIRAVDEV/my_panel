@@ -12,6 +12,7 @@ import type { Node, Server, Subuser, User } from "@/lib/types";
 import { CreateUserSchema, UpdateUserSchema } from "@/lib/types";
 import { generateGuide } from "@/ai/flows/generate-guide-flow";
 import { generateNodeConfig } from "@/ai/flows/generate-node-configuration";
+import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
 
 // AI Actions
 type GuideState = {
@@ -52,9 +53,13 @@ type InstallerGuideState = {
 }
 
 export async function getNodeInstallerGuide(nodeId: string, panelUrl: string, os: "debian" | "nixos"): Promise<InstallerGuideState> {
-    console.log("getNodeInstallerGuide called. AI features are disabled.");
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { guide: `AI features are temporarily disabled. Please refer to the official documentation for installing the daemon on ${os}.` };
+    try {
+        const result = await generateNodeInstaller({ nodeId, panelUrl, os });
+        return { guide: result.guide };
+    } catch (e: any) {
+        console.error("Error generating installer guide:", e);
+        return { error: e.message || "An unexpected error occurred." };
+    }
 }
 
 type NodeConfigState = {
@@ -272,7 +277,7 @@ export async function createServer(formData: FormData): Promise<ActionState> {
             nodeId: new ObjectId(nodeId),
             status: "Offline" as const,
             players: { current: 0, max: 100 },
-            subusers: [currentUser.id]
+            subusers: [],
         };
 
         const result = await db.collection("servers").insertOne(serverData);
@@ -283,14 +288,15 @@ export async function createServer(formData: FormData): Promise<ActionState> {
             { $inc: { servers: 1 } }
         );
         
-        // This check is not strictly needed anymore since we add the creator as a subuser,
-        // but it's good practice for when admins create servers for others.
-        if (currentUser.role !== 'Admin') {
-            await db.collection("users").updateOne(
-                { _id: new ObjectId(currentUser.id) },
-                { $addToSet: { subuserOf: serverId } }
-            );
-        }
+        // Add the creator as the first subuser with full permissions
+        const subuserData = {
+            userId: currentUser.id,
+            permissions: ["Full Access"]
+        };
+        await db.collection("servers").updateOne(
+            { _id: result.insertedId },
+            { $push: { subusers: subuserData } }
+        );
 
         revalidatePath("/dashboard/panel");
         revalidatePath("/dashboard/nodes");
@@ -311,9 +317,7 @@ export async function getServers(): Promise<Server[]> {
         const db = await getDb();
         let query = {};
         if (currentUser.role !== 'Admin') {
-            const userWithSubuserOf = await db.collection("users").findOne({ _id: new ObjectId(currentUser.id) });
-            const subuserOfIds = userWithSubuserOf?.subuserOf || [];
-            query = { _id: { $in: subuserOfIds.map(id => new ObjectId(id)) } };
+            query = { 'subusers.userId': currentUser.id };
         }
         
         const servers = await db.collection("servers").find(query).toArray();
@@ -338,17 +342,14 @@ export async function getServerById(id: string): Promise<Server | null> {
             return null;
         }
         
-        const serverId = server._id.toString();
-
         if (currentUser.role !== 'Admin') {
-            const userWithSubuserOf = await db.collection("users").findOne({ _id: new ObjectId(currentUser.id) });
-            const subuserOfIds = userWithSubuserOf?.subuserOf || [];
-            if (!subuserOfIds.includes(serverId)) {
+            const hasAccess = server.subusers.some((subuser: any) => subuser.userId === currentUser.id);
+            if (!hasAccess) {
                 return null;
             }
         }
 
-        return JSON.parse(JSON.stringify({ ...server, id: serverId }));
+        return JSON.parse(JSON.stringify({ ...server, id: server._id.toString() }));
 
     } catch (error) {
         console.error("Error fetching server: ", error);
@@ -408,10 +409,6 @@ export async function deleteServer(serverId: string): Promise<ActionState> {
         }
 
         await db.collection("servers").deleteOne({ _id: new ObjectId(serverId) });
-        await db.collection("users").updateMany(
-            { subuserOf: serverId },
-            { $pull: { subuserOf: serverId } }
-        );
         
         revalidatePath("/dashboard/panel");
         revalidatePath("/dashboard/nodes");
@@ -456,7 +453,6 @@ export async function createUser(formData: FormData): Promise<ActionState> {
             avatar: `https://placehold.co/40x40.png`,
             fallback: name.charAt(0).toUpperCase(),
             avatarHint: "user portrait",
-            subuserOf: [],
         };
 
         await db.collection("users").insertOne(newUserDocument);
@@ -523,7 +519,6 @@ export async function getUsers(): Promise<User[]> {
                 avatar: `https://placehold.co/40x40.png`,
                 fallback: "A",
                 avatarHint: "user portrait",
-                subuserOf: [],
             });
         }
         
@@ -687,33 +682,52 @@ export async function getSubusers(serverId: string): Promise<Subuser[]> {
             throw new Error("Server not found or access denied.");
         }
 
-        const db = await getDb();
-        const userIds = (server.subusers || []).map(id => new ObjectId(id));
-        
-        if (userIds.length === 0) {
+        const subuserMetas = server.subusers || [];
+        if (subuserMetas.length === 0) {
             return [];
         }
 
+        const userIds = subuserMetas.map(meta => new ObjectId(meta.userId));
+
+        const db = await getDb();
         const users = await db.collection<User>("users").find(
             { _id: { $in: userIds } },
             { projection: { password: 0 } }
         ).toArray();
 
-        return users.map(user => ({
-            id: user._id.toString(),
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar || '',
-            fallback: user.fallback || '',
-            permissions: user.role === 'Admin' ? ['Full Control'] : ['Limited'], // Placeholder
-        }));
+        const usersById = new Map(users.map(u => [u._id.toString(), u]));
+
+        return subuserMetas.map(meta => {
+            const user = usersById.get(meta.userId);
+            return {
+                id: meta.userId,
+                name: user?.name || 'Unknown User',
+                email: user?.email || 'N/A',
+                avatar: user?.avatar || '',
+                fallback: user?.fallback || '?',
+                permissions: meta.permissions,
+            };
+        });
     } catch (error) {
         console.error("Error fetching subusers:", error);
         return [];
     }
 }
 
-export async function addSubuser(serverId: string, email: string): Promise<ActionState> {
+const addSubuserSchema = z.object({
+  serverId: z.string(),
+  email: z.string().email(),
+  permissions: z.string(), // "Full Access" or "Limited Access"
+});
+
+export async function addSubuser(formData: FormData): Promise<ActionState> {
+    const validatedFields = addSubuserSchema.safeParse(Object.fromEntries(formData.entries()));
+    if (!validatedFields.success) {
+        return { success: false, error: "Invalid data provided." };
+    }
+    
+    const { serverId, email, permissions } = validatedFields.data;
+
     try {
         const db = await getDb();
         const userToAdd = await db.collection<User>('users').findOne({ email });
@@ -726,12 +740,7 @@ export async function addSubuser(serverId: string, email: string): Promise<Actio
 
         await db.collection('servers').updateOne(
             { _id: new ObjectId(serverId) },
-            { $addToSet: { subusers: userId } }
-        );
-
-        await db.collection('users').updateOne(
-            { _id: userToAdd._id },
-            { $addToSet: { subuserOf: serverId } }
+            { $addToSet: { subusers: { userId, permissions: [permissions] } } }
         );
 
         revalidatePath(`/dashboard/panel/${serverId}/subusers`);
@@ -748,12 +757,7 @@ export async function removeSubuser(serverId: string, userId: string): Promise<A
         
         await db.collection('servers').updateOne(
             { _id: new ObjectId(serverId) },
-            { $pull: { subusers: userId } }
-        );
-
-        await db.collection('users').updateOne(
-            { _id: new ObjectId(userId) },
-            { $pull: { subuserOf: serverId } }
+            { $pull: { subusers: { userId: userId } } }
         );
 
         revalidatePath(`/dashboard/panel/${serverId}/subusers`);

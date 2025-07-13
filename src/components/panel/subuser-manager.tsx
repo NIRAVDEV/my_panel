@@ -14,24 +14,25 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { Subuser, User } from "@/lib/types";
 import { addSubuser, removeSubuser } from "@/jexactylmc/actions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Badge } from "../ui/badge";
 
 export function SubuserManager({ serverId, initialSubusers, allUsers }: { serverId: string, initialSubusers: Subuser[], allUsers: User[] }) {
     const [subusers, setSubusers] = useState<Subuser[]>(initialSubusers);
     const [isAddDialogOpen, setAddDialogOpen] = useState(false);
-    const [email, setEmail] = useState("");
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
-    const handleAddSubuser = (e: React.FormEvent) => {
+    const handleAddSubuser = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!email) return;
+        const formData = new FormData(e.currentTarget);
+        formData.append("serverId", serverId);
 
         startTransition(async () => {
-            const result = await addSubuser(serverId, email);
+            const result = await addSubuser(formData);
             if (result.success) {
                 toast({ title: "Subuser Added", description: "The user now has access to this server." });
                 setAddDialogOpen(false);
-                setEmail("");
             } else {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
             }
@@ -88,8 +89,7 @@ export function SubuserManager({ serverId, initialSubusers, allUsers }: { server
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            {/* In a real app, this would be more granular */}
-                                            Full Control
+                                            {subuser.permissions.map(p => <Badge key={p} variant="secondary">{p}</Badge>)}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
@@ -124,12 +124,26 @@ export function SubuserManager({ serverId, initialSubusers, allUsers }: { server
                             <DialogHeader>
                                 <DialogTitle>Add New Subuser</DialogTitle>
                                 <DialogDescription>
-                                    Enter the email address of the user you want to grant access to.
+                                    Enter the email address of the user and select their permissions.
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="grid gap-4 py-4">
-                                <Label htmlFor="email">User Email</Label>
-                                <Input id="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="user@example.com" required type="email" />
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">User Email</Label>
+                                    <Input id="email" name="email" placeholder="user@example.com" required type="email" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="permissions">Permissions</Label>
+                                     <Select name="permissions" defaultValue="Limited Access">
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select permissions" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Limited Access">Limited Access</SelectItem>
+                                            <SelectItem value="Full Access">Full Access</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                             <DialogFooter>
                                 <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
