@@ -29,12 +29,6 @@ export default async function NodeDetailsLayout({
     notFound();
   }
 
-  const tabs = [
-    { name: "Configuration", href: `/dashboard/nodes/${node.id}`, icon: FileText, exact: true },
-    { name: "Allocation", href: `/dashboard/nodes/${node.id}/allocation`, icon: List },
-    { name: "Servers", href: `/dashboard/nodes/${node.id}/servers`, icon: Server },
-  ];
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -69,7 +63,7 @@ export default async function NodeDetailsLayout({
         </Button>
       </div>
 
-      <NodeTabs tabs={tabs} />
+      <NodeTabs nodeId={node.id} />
       
       <div className="flex flex-col gap-6">
         {children}

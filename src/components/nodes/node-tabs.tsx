@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
+import { FileText, List, Server, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type NodeTab = {
@@ -13,8 +13,14 @@ type NodeTab = {
   exact?: boolean;
 };
 
-export function NodeTabs({ tabs }: { tabs: NodeTab[] }) {
+export function NodeTabs({ nodeId }: { nodeId: string }) {
   const pathname = usePathname();
+  
+  const tabs: NodeTab[] = [
+    { name: "Configuration", href: `/dashboard/nodes/${nodeId}`, icon: FileText, exact: true },
+    { name: "Allocation", href: `/dashboard/nodes/${nodeId}/allocation`, icon: List },
+    { name: "Servers", href: `/dashboard/nodes/${nodeId}/servers`, icon: Server },
+  ];
 
   return (
     <div className="border-b">
