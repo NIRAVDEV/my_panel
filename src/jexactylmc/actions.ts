@@ -11,6 +11,7 @@ import bcrypt from 'bcrypt';
 import type { Node, Server, User } from "@/lib/types";
 import { CreateUserSchema, UpdateUserSchema } from "@/lib/types";
 import { generateGuide } from "@/ai/flows/generate-guide-flow";
+import { generateNodeConfig } from "@/ai/flows/generate-node-configuration";
 
 // AI Actions
 type GuideState = {
@@ -62,9 +63,20 @@ type NodeConfigState = {
 }
 
 export async function getAINodeConfig(node: Node): Promise<NodeConfigState> {
-    console.log("getAINodeConfig called. AI features are disabled.");
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { config: `# AI features are temporarily disabled.\n# A placeholder configuration would be generated here based on the node details.` };
+    try {
+        const result = await generateNodeConfig({
+            name: node.name,
+            fqdn: node.fqdn,
+            memory: node.memory,
+            disk: node.disk,
+            portsStart: node.ports.start,
+            portsEnd: node.ports.end,
+        });
+        return { config: result.config };
+    } catch (e: any) {
+        console.error("Error generating AI node config:", e);
+        return { error: e.message || "An unexpected error occurred while generating the configuration." };
+    }
 }
 
 
