@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { createServer } from "@/jexactylmc/actions";
+import type { Node } from "@/lib/types";
 
-export function CreateServerForm({ closeDialog }: { closeDialog: () => void }) {
+export function CreateServerForm({ nodes, closeDialog }: { nodes: Node[], closeDialog: () => void }) {
     const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
 
@@ -59,6 +60,25 @@ export function CreateServerForm({ closeDialog }: { closeDialog: () => void }) {
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">Name</Label>
                 <Input id="name" name="name" className="col-span-3" placeholder="e.g., My Awesome Server" required />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="nodeId" className="text-right">Node</Label>
+                <Select name="nodeId" required>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select a node to deploy to" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      {nodes.length > 0 ? (
+                        nodes.map(node => (
+                          <SelectItem key={node.id} value={node.id}>
+                            {node.name} ({node.location})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="none" disabled>No available nodes</SelectItem>
+                      )}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="ram" className="text-right">RAM</Label>
@@ -107,10 +127,8 @@ export function CreateServerForm({ closeDialog }: { closeDialog: () => void }) {
                 <DialogClose asChild>
                     <Button type="button" variant="secondary">Cancel</Button>
                 </DialogClose>
-                <Button type="submit" disabled={isPending}>{isPending ? "Creating..." : "Create Server"}</Button>
+                <Button type="submit" disabled={isPending || nodes.length === 0}>{isPending ? "Creating..." : "Create Server"}</Button>
             </DialogFooter>
         </form>
     );
 }
-
-    

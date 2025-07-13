@@ -21,12 +21,13 @@ import {
 import { MoreHorizontal, Play, PlusCircle, RefreshCw, SlidersHorizontal, Square, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import type { Server } from "@/lib/types";
-import { updateServerStatus, deleteServer } from "@/jexactylmc/actions";
+import type { Server, Node } from "@/lib/types";
+import { updateServerStatus, deleteServer, getNodes } from "@/jexactylmc/actions";
 import { CreateServerForm } from "./create-server-form";
 
 export function ServerList({ initialServers }: { initialServers: Server[] }) {
   const [servers, setServers] = useState<Server[]>(initialServers);
+  const [nodes, setNodes] = useState<Node[]>([]);
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -34,6 +35,14 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
   useEffect(() => {
     setServers(initialServers);
   }, [initialServers]);
+
+  useEffect(() => {
+    // Fetch nodes when the dialog is about to open.
+    // This could also be done on initial component load.
+    if (open) {
+      getNodes().then(setNodes);
+    }
+  }, [open]);
 
   const handleServerAction = (serverId: string, action: "start" | "stop" | "restart") => {
     startTransition(async () => {
@@ -87,7 +96,7 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
         </Button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="sm:max-w-lg">
-            <CreateServerForm closeDialog={() => setOpen(false)} />
+            <CreateServerForm nodes={nodes} closeDialog={() => setOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
@@ -167,5 +176,3 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
     </CardContent>
   );
 }
-
-    

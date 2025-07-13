@@ -244,6 +244,7 @@ const serverSchema = z.object({
     storage: z.coerce.number().int().positive(),
     version: z.string(),
     type: z.enum(["Vanilla", "Paper", "Spigot", "Purpur", "Forge", "Fabric", "BungeeCord"]),
+    nodeId: z.string().min(1, "Node is required"),
 });
 
 
@@ -254,20 +255,38 @@ export async function createServer(formData: FormData): Promise<ActionState> {
         return { success: false, error: "Invalid fields.", errors: validatedFields.error.flatten().fieldErrors };
     }
     
-    const { name, ram, storage, version, type } = validatedFields.data;
+    const { name, ram, storage, version, type, nodeId } = validatedFields.data;
 
     try {
         const db = await getDb();
+        
+        // Check if node exists
+        const node = await db.collection("nodes").findOne({ _id: new ObjectId(nodeId) });
+        if (!node) {
+            return { success: false, error: "Selected node not found." };
+        }
+
+        // TODO: Check if node has enough resources (memory, disk)
+
         await db.collection("servers").insertOne({
             name,
             ram,
             storage,
             version,
             type,
+            nodeId: new ObjectId(nodeId),
             status: "Offline",
             players: { current: 0, max: 100 },
         });
+
+        // Increment server count on the node
+        await db.collection("nodes").updateOne(
+            { _id: new ObjectId(nodeId) },
+            { $inc: { servers: 1 } }
+        );
+
         revalidatePath("/dashboard/panel");
+        revalidatePath("/dashboard/nodes");
         return { success: true };
     } catch (error) {
         console.error("Error creating server:", error);
@@ -337,8 +356,19 @@ export async function updateServerStatus(formData: FormData) {
 export async function deleteServer(serverId: string): Promise<ActionState> {
     try {
         const db = await getDb();
+        const server = await db.collection("servers").findOne({ _id: new ObjectId(serverId) });
+
+        if (server && server.nodeId) {
+             await db.collection("nodes").updateOne(
+                { _id: server.nodeId },
+                { $inc: { servers: -1 } }
+            );
+        }
+
         await db.collection("servers").deleteOne({ _id: new ObjectId(serverId) });
+        
         revalidatePath("/dashboard/panel");
+        revalidatePath("/dashboard/nodes");
         return { success: true };
     } catch (error) {
         console.error("Error deleting server: ", error);

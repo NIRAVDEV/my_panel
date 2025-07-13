@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export type Server = {
@@ -12,6 +13,7 @@ export type Server = {
   ram: number; // in GB
   storage: number; // in GB
   type: "Vanilla" | "Paper" | "Spigot" | "Purpur" | "Forge" | "Fabric" | "BungeeCord";
+  nodeId: string;
 };
 
 export type Node = {
