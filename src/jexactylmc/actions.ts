@@ -14,6 +14,7 @@ import { CreateUserSchema, UpdateUserSchema } from "@/lib/types";
 import { generateGuide } from "@/ai/flows/generate-guide-flow";
 import { generateNodeConfig } from "@/ai/flows/generate-node-configuration";
 import { generateNodeInstaller } from "@/ai/flows/generate-node-installer";
+import { PterodactylClient } from "@/lib/pterodactyl";
 
 // AI Actions
 type GuideState = {
@@ -231,20 +232,28 @@ export async function getNodeById(id: string): Promise<Node | null> {
     }
 }
 
-export async function updateNodeStatus(nodeId: string, currentStatus: "Online" | "Offline") {
-    // This is a simulation of a real health check.
-    // In a real application, you would ping the node's daemon API.
-    const isActuallyOnline = Math.random() > 0.3; // 70% chance of being "Online"
-    const newStatus = isActuallyOnline ? 'Online' : 'Offline';
+export async function updateNodeStatus(nodeId: string) {
+    const node = await getNodeById(nodeId);
+    if (!node) {
+        return { success: false, error: "Node not found." };
+    }
 
+    const pterodactyl = new PterodactylClient(node.fqdn, node.token);
     try {
+        const isOnline = await pterodactyl.isDaemonOnline();
+        const newStatus = isOnline ? 'Online' : 'Offline';
+
         const db = await getDb();
         await db.collection("nodes").updateOne({ _id: new ObjectId(nodeId) }, { $set: { status: newStatus } });
+        
         revalidatePath("/dashboard/nodes");
         return { success: true, newStatus };
     } catch (error) {
-        console.error("Error updating node status: ", error);
-        return { success: false, error: "Failed to update status." };
+        console.error("Error updating node status:", error);
+        const db = await getDb();
+        await db.collection("nodes").updateOne({ _id: new ObjectId(nodeId) }, { $set: { status: 'Offline' } });
+        revalidatePath("/dashboard/nodes");
+        return { success: false, error: "Failed to connect to the node daemon." };
     }
 }
 
@@ -304,6 +313,7 @@ export async function createServer(formData: FormData): Promise<ActionState> {
             status: "Offline" as const,
             players: { current: 0, max: 100 },
             subusers: [{ userId: currentUser.id, permissions: ["Full Access"] }],
+            uuid: randomUUID(),
         };
 
         await db.collection("servers").insertOne(serverData);
@@ -381,33 +391,33 @@ export async function updateServerStatus(formData: FormData) {
     const validatedFields = updateStatusSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
-        console.error("Invalid server status update data", validatedFields.error);
         return { success: false, error: "Invalid data provided." };
     }
 
     const { serverId, action } = validatedFields.data;
+    const server = await getServerById(serverId);
+    if (!server) {
+        return { success: false, error: "Access denied or server not found." };
+    }
+
+    const node = await getNodeById(server.nodeId);
+    if (!node) {
+        return { success: false, error: "Node for this server not found." };
+    }
+    
+    const pterodactyl = new PterodactylClient(node.fqdn, node.token);
 
     try {
-        const server = await getServerById(serverId);
-        if (!server) {
-            return { success: false, error: "Access denied or server not found." };
-        }
-
-        const db = await getDb();
-        let status: Server['status'] = 'Offline';
-
-        if (action === "start") status = 'Online';
-        if (action === "stop") status = 'Offline';
-        if (action === "restart") status = 'Online';
-
-        await db.collection("servers").updateOne({ _id: new ObjectId(serverId) }, { $set: { status } });
-
+        await pterodactyl.setServerPowerState(server.uuid, action);
+        
+        // We can revalidate paths to trigger a data refresh on the client
         revalidatePath("/dashboard/panel");
         revalidatePath(`/dashboard/panel/${serverId}`);
+        
         return { success: true };
-    } catch (error) {
-        console.error("Error updating server status: ", error);
-        return { success: false, error: "Failed to update server status." };
+    } catch (error: any) {
+        console.error(`Error sending command '${action}' to server ${serverId}:`, error);
+        return { success: false, error: error.message || `Failed to ${action} server.` };
     }
 }
 
@@ -647,46 +657,30 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 // Server Log Actions
-const mockLogs: { [serverId: string]: string[] } = {
-  '1': [
-    '[12:00:00] [Server thread/INFO]: Starting Minecraft server version 1.21',
-    '[12:00:01] [Server thread/INFO]: Loading properties',
-    '[12:00:02] [Server thread/INFO]: Default game type: SURVIVAL',
-    '[12:00:03] [Server thread/INFO]: Generating keypair',
-    '[12:00:05] [Server thread/INFO]: Starting minecraft server on *:25565',
-    '[12:00:06] [Server thread/INFO]: Using default channel type',
-    '[12:00:08] [Server thread/INFO]: Preparing level "world"',
-    '[12:00:15] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld',
-    '[12:00:20] [Server thread/INFO]: Done (19.827s)! For help, type "help" or "?"',
-    '[12:00:25] [User Authenticator #1/INFO]: UUID of player Steve is 069a79f4-44e9-4726-a5be-fca90e38aaf5',
-    '[12:00:26] [Server thread/INFO]: Steve[/127.0.0.1:54321] logged in with entity id 123 at (8.5, 64.0, 8.5)',
-    '[12:00:27] [Server thread/INFO]: Steve joined the game',
-  ],
-  'default': [
-    '[INFO] No logs available for this server yet. Start the server to generate logs.'
-  ]
-};
-
 export async function getServerLogs(serverId: string): Promise<string[]> {
-    // In a real application, this would fetch logs from a file, database, or a log streaming service.
-    // For now, we'll return mock data.
-    const db = await getDb();
-    const server = await db.collection("servers").findOne({ _id: new ObjectId(serverId) });
-
+    const server = await getServerById(serverId);
     if (!server) {
-        return ['[ERROR] Server not found.'];
+        return ['[ERROR] Server not found or access denied.'];
     }
 
     if (server.status === 'Offline') {
         return [`[INFO] Server is offline. Start the server to view logs.`];
     }
     
-    // Using a simple mock based on server ID for variety
-    const serverObjectId = new ObjectId(serverId);
-    const lastChar = serverObjectId.toString().slice(-1);
-    const logKey = lastChar > '7' ? '1' : '1'; // Just to show some variety. A real app would have real logic.
-    
-    return mockLogs[logKey] || mockLogs['default'];
+    const node = await getNodeById(server.nodeId);
+    if (!node) {
+        return ['[ERROR] Node for this server not found.'];
+    }
+
+    const pterodactyl = new PterodactylClient(node.fqdn, node.token);
+
+    try {
+        const logs = await pterodactyl.getServerLogs(server.uuid);
+        return logs.split('\n');
+    } catch (error: any) {
+        console.error(`Error fetching logs for server ${serverId}:`, error);
+        return [`[ERROR] Could not fetch logs from the node: ${error.message}`];
+    }
 }
 
 // Subuser Actions
@@ -782,3 +776,5 @@ export async function removeSubuser(serverId: string, userId: string): Promise<A
         return { success: false, error: "Failed to remove subuser." };
     }
 }
+
+    

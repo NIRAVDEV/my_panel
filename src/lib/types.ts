@@ -1,4 +1,5 @@
 
+
 import { z } from 'zod';
 
 export type SubuserMeta = {
@@ -8,6 +9,7 @@ export type SubuserMeta = {
 
 export type Server = {
   id: string;
+  uuid: string; // Pterodactyl server UUID
   name: string;
   status: "Online" | "Offline" | "Starting";
   players: {
@@ -75,3 +77,5 @@ export type Subuser = {
   fallback: string;
   permissions: string[]; // e.g., ["Full Access"] or ["Limited Access"]
 };
+
+    
