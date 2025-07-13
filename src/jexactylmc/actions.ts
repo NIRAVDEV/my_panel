@@ -405,18 +405,33 @@ export async function updateServerStatus(formData: FormData) {
         return { success: false, error: "Node for this server not found." };
     }
     
+    const db = await getDb();
+    if (action === 'start') {
+        await db.collection('servers').updateOne(
+            { _id: new ObjectId(serverId) },
+            { $set: { status: 'Starting' } }
+        );
+    }
+    
+    revalidatePath("/dashboard/panel");
+    revalidatePath(`/dashboard/panel/${serverId}`);
+
     const pterodactyl = new PterodactylClient(node.fqdn, node.token);
 
     try {
         await pterodactyl.setServerPowerState(server.uuid, action);
         
-        // We can revalidate paths to trigger a data refresh on the client
-        revalidatePath("/dashboard/panel");
-        revalidatePath(`/dashboard/panel/${serverId}`);
-        
         return { success: true };
     } catch (error: any) {
         console.error(`Error sending command '${action}' to server ${serverId}:`, error);
+        
+        await db.collection('servers').updateOne(
+            { _id: new ObjectId(serverId) },
+            { $set: { status: 'Offline' } }
+        );
+        revalidatePath("/dashboard/panel");
+        revalidatePath(`/dashboard/panel/${serverId}`);
+
         return { success: false, error: error.message || `Failed to ${action} server.` };
     }
 }

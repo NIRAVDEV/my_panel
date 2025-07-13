@@ -52,7 +52,7 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
       await updateServerStatus(formData);
       toast({
         title: "Action Sent",
-        description: `The "${action}" command has been sent to server ${serverId}.`,
+        description: `The "${action}" command has been sent to the server.`,
       });
     });
   }
@@ -145,13 +145,13 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
                                 </Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleServerAction(server.id, 'start')} disabled={server.status === 'Online'}>
+                            <DropdownMenuItem onClick={() => handleServerAction(server.id, 'start')} disabled={server.status === 'Online' || server.status === 'Starting'}>
                                 <Play className="mr-2 h-4 w-4" /> Start
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleServerAction(server.id, 'stop')} disabled={server.status === 'Offline'}>
                                 <Square className="mr-2 h-4 w-4" /> Stop
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleServerAction(server.id, 'restart')} disabled={server.status === 'Offline'}>
+                            <DropdownMenuItem onClick={() => handleServerAction(server.id, 'restart')} disabled={server.status === 'Offline' || server.status === 'Starting'}>
                                 <RefreshCw className="mr-2 h-4 w-4" /> Restart
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
