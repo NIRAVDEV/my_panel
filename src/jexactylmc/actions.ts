@@ -283,6 +283,8 @@ export async function createServer(formData: FormData): Promise<ActionState> {
             { $inc: { servers: 1 } }
         );
         
+        // This check is not strictly needed anymore since we add the creator as a subuser,
+        // but it's good practice for when admins create servers for others.
         if (currentUser.role !== 'Admin') {
             await db.collection("users").updateOne(
                 { _id: new ObjectId(currentUser.id) },
@@ -309,7 +311,9 @@ export async function getServers(): Promise<Server[]> {
         const db = await getDb();
         let query = {};
         if (currentUser.role !== 'Admin') {
-            query = { _id: { $in: (currentUser.subuserOf || []).map(id => new ObjectId(id)) } };
+            const userWithSubuserOf = await db.collection("users").findOne({ _id: new ObjectId(currentUser.id) });
+            const subuserOfIds = userWithSubuserOf?.subuserOf || [];
+            query = { _id: { $in: subuserOfIds.map(id => new ObjectId(id)) } };
         }
         
         const servers = await db.collection("servers").find(query).toArray();
@@ -336,8 +340,12 @@ export async function getServerById(id: string): Promise<Server | null> {
         
         const serverId = server._id.toString();
 
-        if (currentUser.role !== 'Admin' && !(currentUser.subuserOf || []).includes(serverId)) {
-            return null;
+        if (currentUser.role !== 'Admin') {
+            const userWithSubuserOf = await db.collection("users").findOne({ _id: new ObjectId(currentUser.id) });
+            const subuserOfIds = userWithSubuserOf?.subuserOf || [];
+            if (!subuserOfIds.includes(serverId)) {
+                return null;
+            }
         }
 
         return JSON.parse(JSON.stringify({ ...server, id: serverId }));
@@ -680,8 +688,12 @@ export async function getSubusers(serverId: string): Promise<Subuser[]> {
         }
 
         const db = await getDb();
-        const userIds = server.subusers.map(id => new ObjectId(id));
+        const userIds = (server.subusers || []).map(id => new ObjectId(id));
         
+        if (userIds.length === 0) {
+            return [];
+        }
+
         const users = await db.collection<User>("users").find(
             { _id: { $in: userIds } },
             { projection: { password: 0 } }
