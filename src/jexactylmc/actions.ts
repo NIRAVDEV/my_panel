@@ -8,7 +8,7 @@ import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import bcrypt from 'bcrypt';
 
-import type { Node, Server, User } from "@/lib/types";
+import type { Node, Server, Subuser, User } from "@/lib/types";
 import { CreateUserSchema, UpdateUserSchema } from "@/lib/types";
 import { generateGuide } from "@/ai/flows/generate-guide-flow";
 import { generateNodeConfig } from "@/ai/flows/generate-node-configuration";
@@ -64,14 +64,7 @@ type NodeConfigState = {
 
 export async function getAINodeConfig(node: Node): Promise<NodeConfigState> {
     try {
-        const result = await generateNodeConfig({
-            name: node.name,
-            fqdn: node.fqdn,
-            memory: node.memory,
-            disk: node.disk,
-            portsStart: node.ports.start,
-            portsEnd: node.ports.end,
-        });
+        const result = await generateNodeConfig(node);
         return { config: result.config };
     } catch (e: any) {
         console.error("Error generating AI node config:", e);
@@ -260,30 +253,42 @@ export async function createServer(formData: FormData): Promise<ActionState> {
     try {
         const db = await getDb();
         
-        // Check if node exists
         const node = await db.collection("nodes").findOne({ _id: new ObjectId(nodeId) });
         if (!node) {
             return { success: false, error: "Selected node not found." };
         }
 
-        // TODO: Check if node has enough resources (memory, disk)
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            return { success: false, error: "Authentication required." };
+        }
 
-        await db.collection("servers").insertOne({
+        const serverData = {
             name,
             ram,
             storage,
             version,
             type,
             nodeId: new ObjectId(nodeId),
-            status: "Offline",
+            status: "Offline" as const,
             players: { current: 0, max: 100 },
-        });
+            subusers: [currentUser.id]
+        };
 
-        // Increment server count on the node
+        const result = await db.collection("servers").insertOne(serverData);
+        const serverId = result.insertedId.toString();
+
         await db.collection("nodes").updateOne(
             { _id: new ObjectId(nodeId) },
             { $inc: { servers: 1 } }
         );
+        
+        if (currentUser.role !== 'Admin') {
+            await db.collection("users").updateOne(
+                { _id: new ObjectId(currentUser.id) },
+                { $addToSet: { subuserOf: serverId } }
+            );
+        }
 
         revalidatePath("/dashboard/panel");
         revalidatePath("/dashboard/nodes");
@@ -296,8 +301,18 @@ export async function createServer(formData: FormData): Promise<ActionState> {
 
 export async function getServers(): Promise<Server[]> {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            return [];
+        }
+
         const db = await getDb();
-        const servers = await db.collection("servers").find({}).toArray();
+        let query = {};
+        if (currentUser.role !== 'Admin') {
+            query = { _id: { $in: (currentUser.subuserOf || []).map(id => new ObjectId(id)) } };
+        }
+        
+        const servers = await db.collection("servers").find(query).toArray();
         return JSON.parse(JSON.stringify(servers.map(server => ({ ...server, id: server._id.toString() }))));
     } catch (error) {
         console.error("Error fetching servers: ", error);
@@ -307,12 +322,26 @@ export async function getServers(): Promise<Server[]> {
 
 export async function getServerById(id: string): Promise<Server | null> {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            return null;
+        }
+
         const db = await getDb();
         const server = await db.collection("servers").findOne({ _id: new ObjectId(id) });
-        if (server) {
-            return JSON.parse(JSON.stringify({ ...server, id: server._id.toString() }));
+        
+        if (!server) {
+            return null;
         }
-        return null;
+        
+        const serverId = server._id.toString();
+
+        if (currentUser.role !== 'Admin' && !(currentUser.subuserOf || []).includes(serverId)) {
+            return null;
+        }
+
+        return JSON.parse(JSON.stringify({ ...server, id: serverId }));
+
     } catch (error) {
         console.error("Error fetching server: ", error);
         return null;
@@ -335,6 +364,11 @@ export async function updateServerStatus(formData: FormData) {
     const { serverId, action } = validatedFields.data;
 
     try {
+        const server = await getServerById(serverId);
+        if (!server) {
+            return { success: false, error: "Access denied or server not found." };
+        }
+
         const db = await getDb();
         let status: Server['status'] = 'Offline';
 
@@ -366,6 +400,10 @@ export async function deleteServer(serverId: string): Promise<ActionState> {
         }
 
         await db.collection("servers").deleteOne({ _id: new ObjectId(serverId) });
+        await db.collection("users").updateMany(
+            { subuserOf: serverId },
+            { $pull: { subuserOf: serverId } }
+        );
         
         revalidatePath("/dashboard/panel");
         revalidatePath("/dashboard/nodes");
@@ -409,7 +447,8 @@ export async function createUser(formData: FormData): Promise<ActionState> {
             role: role,
             avatar: `https://placehold.co/40x40.png`,
             fallback: name.charAt(0).toUpperCase(),
-            avatarHint: "user portrait"
+            avatarHint: "user portrait",
+            subuserOf: [],
         };
 
         await db.collection("users").insertOne(newUserDocument);
@@ -475,7 +514,8 @@ export async function getUsers(): Promise<User[]> {
                 role: "Admin",
                 avatar: `https://placehold.co/40x40.png`,
                 fallback: "A",
-                avatarHint: "user portrait"
+                avatarHint: "user portrait",
+                subuserOf: [],
             });
         }
         
@@ -629,4 +669,85 @@ export async function getServerLogs(serverId: string): Promise<string[]> {
     const logKey = lastChar > '7' ? '1' : '1'; // Just to show some variety. A real app would have real logic.
     
     return mockLogs[logKey] || mockLogs['default'];
+}
+
+// Subuser Actions
+export async function getSubusers(serverId: string): Promise<Subuser[]> {
+    try {
+        const server = await getServerById(serverId);
+        if (!server) {
+            throw new Error("Server not found or access denied.");
+        }
+
+        const db = await getDb();
+        const userIds = server.subusers.map(id => new ObjectId(id));
+        
+        const users = await db.collection<User>("users").find(
+            { _id: { $in: userIds } },
+            { projection: { password: 0 } }
+        ).toArray();
+
+        return users.map(user => ({
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar || '',
+            fallback: user.fallback || '',
+            permissions: user.role === 'Admin' ? ['Full Control'] : ['Limited'], // Placeholder
+        }));
+    } catch (error) {
+        console.error("Error fetching subusers:", error);
+        return [];
+    }
+}
+
+export async function addSubuser(serverId: string, email: string): Promise<ActionState> {
+    try {
+        const db = await getDb();
+        const userToAdd = await db.collection<User>('users').findOne({ email });
+
+        if (!userToAdd) {
+            return { success: false, error: "User with that email does not exist." };
+        }
+        
+        const userId = userToAdd._id.toString();
+
+        await db.collection('servers').updateOne(
+            { _id: new ObjectId(serverId) },
+            { $addToSet: { subusers: userId } }
+        );
+
+        await db.collection('users').updateOne(
+            { _id: userToAdd._id },
+            { $addToSet: { subuserOf: serverId } }
+        );
+
+        revalidatePath(`/dashboard/panel/${serverId}/subusers`);
+        return { success: true };
+    } catch (error) {
+        console.error("Error adding subuser:", error);
+        return { success: false, error: "Failed to add subuser." };
+    }
+}
+
+export async function removeSubuser(serverId: string, userId: string): Promise<ActionState> {
+    try {
+        const db = await getDb();
+        
+        await db.collection('servers').updateOne(
+            { _id: new ObjectId(serverId) },
+            { $pull: { subusers: userId } }
+        );
+
+        await db.collection('users').updateOne(
+            { _id: new ObjectId(userId) },
+            { $pull: { subuserOf: serverId } }
+        );
+
+        revalidatePath(`/dashboard/panel/${serverId}/subusers`);
+        return { success: true };
+    } catch (error) {
+        console.error("Error removing subuser:", error);
+        return { success: false, error: "Failed to remove subuser." };
+    }
 }

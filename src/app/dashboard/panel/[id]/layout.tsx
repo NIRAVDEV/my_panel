@@ -1,6 +1,6 @@
 
 
-import { getServerById, updateServerStatus } from "@/jexactylmc/actions";
+import { getServerById } from "@/jexactylmc/actions";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Server } from "@/lib/types";
 import { ServerNav } from "@/components/panel/server-nav";
 import { Card } from "@/components/ui/card";
+import { ServerPowerControls } from "@/components/panel/server-power-controls";
 
 export default async function ServerManagementLayout({
   children,
@@ -49,29 +50,7 @@ export default async function ServerManagementLayout({
                 {getStatusBadge(server.status)}
             </div>
         </div>
-        <div className="flex items-center gap-2">
-          <form action={updateServerStatus}>
-            <input type="hidden" name="serverId" value={server.id} />
-            <input type="hidden" name="action" value="start" />
-            <Button type="submit" variant="outline" size="sm" disabled={server.status === 'Online' || server.status === 'Starting'}>
-                <Play className="mr-2 h-4 w-4" /> Start
-            </Button>
-          </form>
-          <form action={updateServerStatus}>
-             <input type="hidden" name="serverId" value={server.id} />
-             <input type="hidden" name="action" value="restart" />
-             <Button type="submit" variant="outline" size="sm" disabled={server.status === 'Offline' || server.status === 'Starting'}>
-                <RefreshCw className="mr-2 h-4 w-4" /> Restart
-            </Button>
-          </form>
-          <form action={updateServerStatus}>
-            <input type="hidden" name="serverId" value={server.id} />
-            <input type="hidden" name="action" value="stop" />
-            <Button type="submit" variant="destructive" size="sm" disabled={server.status === 'Offline'}>
-                <Square className="mr-2 h-4 w-4" /> Stop
-            </Button>
-          </form>
-        </div>
+        <ServerPowerControls server={server} />
       </div>
       
       <div className="grid gap-6 md:grid-cols-[200px_1fr] lg:grid-cols-[250px_1fr]">

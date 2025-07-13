@@ -14,6 +14,7 @@ export type Server = {
   storage: number; // in GB
   type: "Vanilla" | "Paper" | "Spigot" | "Purpur" | "Forge" | "Fabric" | "BungeeCord";
   nodeId: string;
+  subusers: string[]; // Array of user IDs
 };
 
 export type Node = {
@@ -39,6 +40,7 @@ export const UserSchema = z.object({
   avatar: z.string().optional(),
   fallback: z.string().optional(),
   avatarHint: z.string().optional(),
+  subuserOf: z.array(z.string()).optional(), // Array of server IDs
 });
 
 export type User = z.infer<typeof UserSchema>;
@@ -57,3 +59,12 @@ export const UpdateUserSchema = z.object({
     email: z.string().email("Invalid email address"),
     role: z.enum(["Admin", "User"]),
 });
+
+export type Subuser = {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  fallback: string;
+  permissions: string[]; // e.g., ["control.start", "control.stop"]
+};

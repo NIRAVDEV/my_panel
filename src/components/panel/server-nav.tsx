@@ -4,13 +4,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Folder, Puzzle } from "lucide-react";
+import { Folder, Puzzle, Users } from "lucide-react";
 
 export function ServerNav({ serverId }: { serverId: string }) {
   const pathname = usePathname();
   const navItems = [
     { href: `/dashboard/panel/${serverId}/plugins`, label: "Plugins", icon: Puzzle },
     { href: `/dashboard/panel/${serverId}/files`, label: "File Manager", icon: Folder },
+    { href: `/dashboard/panel/${serverId}/subusers`, label: "Subusers", icon: Users },
   ];
 
   return (
