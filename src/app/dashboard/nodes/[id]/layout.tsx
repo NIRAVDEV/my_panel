@@ -1,12 +1,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, Cog, HardDrive, List, Server, FileText } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { getNodeById } from "@/jexactylmc/actions";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,6 +14,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { NodeTabs } from "@/components/nodes/node-tabs";
 
 export default async function NodeDetailsLayout({
   children,
@@ -28,6 +28,12 @@ export default async function NodeDetailsLayout({
   if (!node) {
     notFound();
   }
+
+  const tabs = [
+    { name: "Configuration", href: `/dashboard/nodes/${node.id}`, icon: FileText, exact: true },
+    { name: "Allocation", href: `/dashboard/nodes/${node.id}/allocation`, icon: List },
+    { name: "Servers", href: `/dashboard/nodes/${node.id}/servers`, icon: Server },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -53,7 +59,7 @@ export default async function NodeDetailsLayout({
                 </BreadcrumbList>
             </Breadcrumb>
             <h1 className="text-2xl font-bold font-headline lg:text-3xl">{node.name}</h1>
-            <p className="text-muted-foreground">Your daemon configuration file.</p>
+            <p className="text-muted-foreground">Manage allocations, servers, and configuration for this node.</p>
         </div>
         <Button asChild variant="outline">
           <Link href="/dashboard/nodes">
@@ -63,15 +69,7 @@ export default async function NodeDetailsLayout({
         </Button>
       </div>
 
-      <Tabs defaultValue="configuration" className="w-full">
-        <TabsList>
-          <TabsTrigger value="about">About</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-          <TabsTrigger value="configuration">Configuration</TabsTrigger>
-          <TabsTrigger value="allocation">Allocation</TabsTrigger>
-          <TabsTrigger value="servers">Servers</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <NodeTabs tabs={tabs} />
       
       <div className="flex flex-col gap-6">
         {children}

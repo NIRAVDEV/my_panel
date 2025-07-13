@@ -2,6 +2,7 @@
 import { getNodeById } from "@/jexactylmc/actions";
 import { NodeConfiguration } from "@/components/nodes/node-configuration";
 import { notFound } from "next/navigation";
+import { NodeInstaller } from "@/components/nodes/node-installer";
 
 export default async function NodeConfigurationPage({ params }: { params: { id: string } }) {
   const node = await getNodeById(params.id);
@@ -16,7 +17,7 @@ export default async function NodeConfigurationPage({ params }: { params: { id: 
             <NodeConfiguration node={node} />
         </div>
         <div>
-            {/* Placeholder for Auto-Deploy Card */}
+            <NodeInstaller node={node} />
         </div>
     </div>
   );

@@ -210,9 +210,13 @@ export async function getNodeById(id: string): Promise<Node | null> {
 }
 
 export async function updateNodeStatus(nodeId: string, currentStatus: "Online" | "Offline") {
+    // This is a simulation of a real health check.
+    // In a real application, you would ping the node's daemon API.
+    const isActuallyOnline = Math.random() > 0.3; // 70% chance of being "Online"
+    const newStatus = isActuallyOnline ? 'Online' : 'Offline';
+
     try {
         const db = await getDb();
-        const newStatus = currentStatus === 'Offline' ? 'Online' : 'Offline';
         await db.collection("nodes").updateOne({ _id: new ObjectId(nodeId) }, { $set: { status: newStatus } });
         revalidatePath("/dashboard/nodes");
         return { success: true, newStatus };
@@ -281,12 +285,6 @@ export async function createServer(formData: FormData): Promise<ActionState> {
         };
 
         const result = await db.collection("servers").insertOne(serverData);
-        const serverId = result.insertedId.toString();
-
-        await db.collection("nodes").updateOne(
-            { _id: new ObjectId(nodeId) },
-            { $inc: { servers: 1 } }
-        );
         
         // Add the creator as the first subuser with full permissions
         const subuserData = {
@@ -296,6 +294,11 @@ export async function createServer(formData: FormData): Promise<ActionState> {
         await db.collection("servers").updateOne(
             { _id: result.insertedId },
             { $push: { subusers: subuserData } }
+        );
+
+        await db.collection("nodes").updateOne(
+            { _id: new ObjectId(nodeId) },
+            { $inc: { servers: 1 } }
         );
 
         revalidatePath("/dashboard/panel");
@@ -678,8 +681,8 @@ export async function getServerLogs(serverId: string): Promise<string[]> {
 export async function getSubusers(serverId: string): Promise<Subuser[]> {
     try {
         const server = await getServerById(serverId);
-        if (!server) {
-            throw new Error("Server not found or access denied.");
+        if (!server || !server.subusers) {
+            return [];
         }
 
         const subuserMetas = server.subusers || [];
