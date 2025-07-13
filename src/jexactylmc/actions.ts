@@ -421,8 +421,11 @@ export async function getUsers(): Promise<User[]> {
     try {
         const db = await getDb();
         const usersCollection = db.collection("users");
-        let adminUser = await usersCollection.findOne({ email: "admin@admin.com" });
+        
+        // Find admin user first
+        const adminUser = await usersCollection.findOne({ email: "admin@admin.com" });
 
+        // If admin user doesn't exist, create it
         if (!adminUser) {
             const hashedPassword = await bcrypt.hash("admin123", 10);
             await usersCollection.insertOne({
@@ -436,6 +439,7 @@ export async function getUsers(): Promise<User[]> {
             });
         }
         
+        // Fetch all users after ensuring admin exists
         const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
         return JSON.parse(JSON.stringify(users.map(user => ({ ...user, id: user._id.toString() }))));
     } catch (error) {
@@ -443,6 +447,7 @@ export async function getUsers(): Promise<User[]> {
         return [];
     }
 }
+
 
 export async function deleteUser(userId: string): Promise<ActionState> {
     try {
@@ -504,7 +509,9 @@ export async function login(prevState: LoginState, formData: FormData): Promise<
             path: '/',
         });
         
-        return { success: true };
+        const { password: _, ...userWithoutPassword } = user;
+        return { success: true, user: JSON.parse(JSON.stringify({ ...userWithoutPassword, id: user._id.toString() })) };
+
     } catch (error) {
         console.error("Login error:", error);
         return { error: "An unexpected error occurred." };
