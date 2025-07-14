@@ -30,6 +30,7 @@ export type Node = {
   location: string;
   fqdn: string;
   daemonPort: number;
+  useSSL: boolean;
   memory: number; // in GB
   disk: number; // in GB
   ports: { start: number; end: number };
@@ -78,5 +79,3 @@ export type Subuser = {
   fallback: string;
   permissions: string[]; // e.g., ["Full Access"] or ["Limited Access"]
 };
-
-    

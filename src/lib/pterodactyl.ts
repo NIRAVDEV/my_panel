@@ -17,8 +17,9 @@ export class PterodactylClient {
   private readonly baseUrl: string;
   private readonly apiToken: string;
 
-  constructor(fqdn: string, port: number, apiToken: string) {
-    this.baseUrl = `https://${fqdn}:${port}`;
+  constructor(fqdn: string, port: number, apiToken: string, useSSL: boolean = true) {
+    const protocol = useSSL ? 'https' : 'http';
+    this.baseUrl = `${protocol}://${fqdn}:${port}`;
     this.apiToken = apiToken;
   }
 

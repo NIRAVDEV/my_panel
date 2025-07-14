@@ -17,6 +17,7 @@ import { createNode, updateNode } from "@/jexactylmc/actions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Node } from "@/lib/types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "../ui/switch";
 
 export function NodeForm({ node, closeDialog }: { node?: Node, closeDialog: () => void }) {
     const { toast } = useToast();
@@ -91,6 +92,12 @@ export function NodeForm({ node, closeDialog }: { node?: Node, closeDialog: () =
                 <Input id="fqdn" name="fqdn" className="col-span-3" placeholder="e.g., node.example.com or IP" defaultValue={node?.fqdn} required />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="useSSL" className="text-right">Use SSL</Label>
+                <div className="col-span-3">
+                    <Switch id="useSSL" name="useSSL" defaultChecked={node?.useSSL ?? true} />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="daemonPort" className="text-right">Daemon Port</Label>
                 <Input id="daemonPort" name="daemonPort" type="number" className="col-span-3" placeholder="e.g., 8080" defaultValue={node?.daemonPort || 8080} required />
               </div>
@@ -119,5 +126,3 @@ export function NodeForm({ node, closeDialog }: { node?: Node, closeDialog: () =
         </form>
     );
 }
-
-    
