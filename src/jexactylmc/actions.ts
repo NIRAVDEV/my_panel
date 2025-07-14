@@ -1,4 +1,5 @@
 
+
 "use server";
 
 import { z } from "zod";
@@ -293,7 +294,7 @@ export async function createServer(formData: FormData): Promise<ActionState> {
     try {
         const db = await getDb();
         
-        const node = await db.collection("nodes").findOne({ _id: new ObjectId(nodeId) });
+        const node = await getNodeById(nodeId);
         if (!node) {
             return { success: false, error: "Selected node not found." };
         }
@@ -302,6 +303,19 @@ export async function createServer(formData: FormData): Promise<ActionState> {
         if (!currentUser) {
             return { success: false, error: "Authentication required." };
         }
+
+        const pterodactyl = new PterodactylClient(node.fqdn, node.token);
+        const serverUuid = randomUUID();
+
+        // This is the crucial step: provision the server on the node
+        await pterodactyl.createServer({
+            uuid: serverUuid,
+            name: name,
+            image: `ghcr.io/pterodactyl/yolks:java_${version.split('.')[1]}`,
+            memory: ram * 1024, // Pterodactyl uses MB
+            disk: storage * 1024, // Pterodactyl uses MB
+            ports: 1, // Number of ports to assign
+        });
 
         const serverData = {
             name,
@@ -313,7 +327,7 @@ export async function createServer(formData: FormData): Promise<ActionState> {
             status: "Offline" as const,
             players: { current: 0, max: 100 },
             subusers: [{ userId: currentUser.id, permissions: ["Full Access"] }],
-            uuid: randomUUID(),
+            uuid: serverUuid,
         };
 
         await db.collection("servers").insertOne(serverData);
@@ -326,9 +340,9 @@ export async function createServer(formData: FormData): Promise<ActionState> {
         revalidatePath("/dashboard/panel");
         revalidatePath("/dashboard/nodes");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating server:", error);
-        return { success: false, error: "Failed to create server." };
+        return { success: false, error: `Failed to create server on node: ${error.message}` };
     }
 }
 

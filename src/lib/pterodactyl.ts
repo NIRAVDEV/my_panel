@@ -1,7 +1,17 @@
 
+
 // NOTE: This is a simplified client for demonstration purposes.
 // A production-ready client would have more robust error handling,
 // type definitions for all API responses, and potentially more features.
+
+type ServerCreationPayload = {
+    uuid: string;
+    name: string;
+    image: string;
+    memory: number; // in MB
+    disk: number; // in MB
+    ports: number;
+}
 
 export class PterodactylClient {
   private readonly baseUrl: string;
@@ -23,35 +33,33 @@ export class PterodactylClient {
     };
 
     try {
-      // This fetch call attempts to make a real network request.
-      // For this to work, your panel must be able to reach the node's FQDN and port.
       const response = await fetch(url, { ...options, headers });
       
       if (!response.ok) {
         const errorBody = await response.text();
         console.error(`Pterodactyl API Error: ${response.status} ${response.statusText}`, errorBody);
-        throw new Error(`API request to node failed with status ${response.status}: ${errorBody}`);
+        throw new Error(`API request to node failed with status ${response.status}: ${errorBody || response.statusText}`);
       }
       
-      if (response.status === 204) { // No Content, successful action
+      // Successful actions with no content to return
+      if (response.status === 204) {
         return;
       }
 
-      // The WebSocket endpoint for logs returns a JSON object with a token
-      if (endpoint.endsWith('/ws')) {
+      // Successful server creation returns data
+      if (response.status === 200 && endpoint === '/api/servers') {
         return response.json();
       }
-      
+
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         return response.json();
       }
 
-      return response.text(); // For logs, which are returned as plain text
+      return response.text();
     } catch (error: any) {
       console.error(`Failed to connect to Pterodactyl daemon at ${this.baseUrl}${endpoint}`, error);
-      // This error often means a network issue, firewall block, or the daemon is offline.
-      throw new Error(`Could not connect to the node. Please ensure it is online and accessible. Error: ${error.message}`);
+      throw new Error(`Could not connect to the node. Ensure it is online, accessible, and the FQDN is correct. Error: ${error.message}`);
     }
   }
 
@@ -80,12 +88,39 @@ export class PterodactylClient {
   }
 
   /**
+   * Provisions a new server on the node.
+   * @param payload The server configuration details.
+   */
+  public async createServer(payload: ServerCreationPayload): Promise<any> {
+    return await this.request('/api/servers', {
+        method: 'POST',
+        body: JSON.stringify({
+            uuid: payload.uuid,
+            name: payload.name,
+            docker_image: payload.image,
+            limits: {
+                memory: payload.memory,
+                disk: payload.disk,
+                cpu: 0,
+                threads: null,
+                io: 500,
+            },
+            allocations: {
+                default: {
+                    ip: '0.0.0.0',
+                    ports: [], // Let Wings assign the port
+                }
+            },
+            environment: {},
+        }),
+    });
+  }
+
+  /**
    * Fetches the console logs for a specific server.
    * @param serverUuid The UUID of the server.
    */
   public async getServerLogs(serverUuid: string): Promise<string> {
-    // The actual Pterodactyl API uses a WebSocket for live logs.
-    // This function fetches recent static logs for simplicity.
     const response = await this.request(`/api/servers/${serverUuid}/logs`);
     return response || '';
   }

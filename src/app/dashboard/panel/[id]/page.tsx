@@ -40,7 +40,7 @@ export default async function ServerOverviewPage({ params }: { params: { id: str
         />
       </div>
 
-      <ServerConsole serverId={server.id} />
+      {/* <ServerConsole serverId={server.id} /> */}
     </>
   );
 }
