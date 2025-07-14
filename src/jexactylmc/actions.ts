@@ -73,11 +73,14 @@ type NodeConfigState = {
 export async function getAINodeConfig(node: Node, panelUrl: string): Promise<NodeConfigState> {
     let updatedNode = { ...node };
 
+    // Ensure the node has all necessary tokens and IDs for configuration.
+    // This logic runs if a node was created before the token fields were added.
     if (!node.uuid || !node.tokenId || !node.token) {
         const db = await getDb();
         const updates: Partial<Node> = {};
         if (!node.uuid) updates.uuid = randomUUID();
-        if (!node.tokenId) updates.tokenId = randomBytes(4).toString('hex');
+        // The tokenId and token are used for daemon-to-panel communication.
+        if (!node.tokenId) updates.tokenId = randomBytes(8).toString('hex');
         if (!node.token) updates.token = randomBytes(20).toString('hex');
 
         await db.collection("nodes").updateOne(
@@ -85,11 +88,16 @@ export async function getAINodeConfig(node: Node, panelUrl: string): Promise<Nod
             { $set: updates }
         );
         updatedNode = { ...node, ...updates };
+        // We revalidate here to ensure subsequent calls have the fresh data.
         revalidatePath(`/dashboard/nodes/${node.id}`);
     }
 
     try {
-        const result = await generateNodeConfig({ ...updatedNode, panelUrl });
+        // The AI flow is responsible for correctly formatting the config.yml.
+        const result = await generateNodeConfig({
+             ...updatedNode,
+             panelUrl: panelUrl.replace(/\/$/, '') // Ensure no trailing slash
+        });
         return { config: result.config };
     } catch (e: any) {
         console.error("Error generating AI node config:", e);
@@ -162,7 +170,7 @@ export async function createNode(formData: FormData): Promise<ActionState> {
             servers: 0,
             status: "Offline",
             uuid: randomUUID(),
-            tokenId: randomBytes(4).toString('hex'),
+            tokenId: randomBytes(8).toString('hex'),
             token: randomBytes(20).toString('hex'),
         });
         revalidatePath("/dashboard/nodes");
@@ -245,7 +253,7 @@ export async function updateNodeStatus(nodeId: string) {
         return { success: false, error: "Node not found." };
     }
 
-    const pterodactyl = new PterodactylClient(node.fqdn, node.daemonPort, node.token, node.useSSL);
+    const pterodactyl = new PterodactylClient(node);
     try {
         const isOnline = await pterodactyl.isDaemonOnline();
         const newStatus = isOnline ? 'Online' : 'Offline';
@@ -310,17 +318,16 @@ export async function createServer(formData: FormData): Promise<ActionState> {
             return { success: false, error: "Authentication required." };
         }
 
-        const pterodactyl = new PterodactylClient(node.fqdn, node.daemonPort, node.token, node.useSSL);
+        const pterodactyl = new PterodactylClient(node);
         const serverUuid = randomUUID();
 
         // This is the crucial step: provision the server on the node
         await pterodactyl.createServer({
             uuid: serverUuid,
             name: name,
-            image: `ghcr.io/pterodactyl/yolks:java_${version.split('.')[1]}`,
+            image: `ghcr.io/pterodactyl/yolks:java_${version.split('.')[1] || '17'}`, // Default to 17 if split fails
             memory: ram * 1024, // Pterodactyl uses MB
             disk: storage * 1024, // Pterodactyl uses MB
-            ports: 1, // Number of ports to assign
         });
 
         const serverData = {
@@ -331,7 +338,7 @@ export async function createServer(formData: FormData): Promise<ActionState> {
             type,
             nodeId: new ObjectId(nodeId),
             status: "Offline" as const,
-            players: { current: 0, max: 100 },
+            players: { current: 0, max: 20 },
             subusers: [{ userId: currentUser.id, permissions: ["Full Access"] }],
             uuid: serverUuid,
         };
@@ -426,7 +433,7 @@ export async function updateServerStatus(formData: FormData) {
     }
     
     const db = await getDb();
-    if (action === 'start') {
+    if (action === 'start' || action === 'restart') {
         await db.collection('servers').updateOne(
             { _id: new ObjectId(serverId) },
             { $set: { status: 'Starting' } }
@@ -436,22 +443,19 @@ export async function updateServerStatus(formData: FormData) {
     revalidatePath("/dashboard/panel");
     revalidatePath(`/dashboard/panel/${serverId}`);
 
-    const pterodactyl = new PterodactylClient(node.fqdn, node.daemonPort, node.token, node.useSSL);
+    const pterodactyl = new PterodactylClient(node);
 
     try {
         await pterodactyl.setServerPowerState(server.uuid, action);
         
-        // After sending the command, we can assume the final state will be reached.
-        // A more advanced implementation would use websockets to get real-time status updates from Wings.
-        let finalStatus: Server['status'] = 'Offline';
-        if (action === 'start' || action === 'restart') {
-            finalStatus = 'Online';
-        }
+        // This is a fire-and-forget action. The actual status update should
+        // come from a websocket or periodic check, but for now, we optimistically update.
+        // Let's remove the optimistic update to avoid confusion and rely on manual refresh.
+        // A "starting" state is enough feedback for now.
 
-        await db.collection('servers').updateOne(
-            { _id: new ObjectId(serverId) },
-            { $set: { status: finalStatus } }
-        );
+        // A slight delay to allow the daemon to process, then we can re-check status.
+        // For now, we will leave it in "Starting" and the user can refresh.
+        // A more advanced system would poll or use websockets.
 
         revalidatePath("/dashboard/panel");
         revalidatePath(`/dashboard/panel/${serverId}`);
@@ -460,6 +464,7 @@ export async function updateServerStatus(formData: FormData) {
     } catch (error: any) {
         console.error(`Error sending command '${action}' to server ${serverId}:`, error);
         
+        // If the command fails, revert the status to Offline.
         await db.collection('servers').updateOne(
             { _id: new ObjectId(serverId) },
             { $set: { status: 'Offline' } }
@@ -722,7 +727,7 @@ export async function getServerLogs(serverId: string): Promise<string[]> {
         return ['[ERROR] Node for this server not found.'];
     }
 
-    const pterodactyl = new PterodactylClient(node.fqdn, node.daemonPort, node.token, node.useSSL);
+    const pterodactyl = new PterodactylClient(node);
 
     try {
         const logs = await pterodactyl.getServerLogs(server.uuid);

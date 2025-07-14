@@ -40,6 +40,7 @@ export default async function ServerOverviewPage({ params }: { params: { id: str
         />
       </div>
 
+      {/* The console is disabled to stabilize the app while fixing core connection issues. */}
       {/* <ServerConsole serverId={server.id} /> */}
     </>
   );

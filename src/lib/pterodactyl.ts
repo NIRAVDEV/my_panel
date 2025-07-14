@@ -1,8 +1,9 @@
 
 
-// NOTE: This is a simplified client for demonstration purposes.
-// A production-ready client would have more robust error handling,
-// type definitions for all API responses, and potentially more features.
+import type { Node } from './types';
+
+// This is a more robust client inspired by production panel logic.
+// It handles API requests, errors, and different response types correctly.
 
 type ServerCreationPayload = {
     uuid: string;
@@ -10,20 +11,21 @@ type ServerCreationPayload = {
     image: string;
     memory: number; // in MB
     disk: number; // in MB
-    ports: number;
 }
 
 export class PterodactylClient {
   private readonly baseUrl: string;
   private readonly apiToken: string;
 
-  constructor(fqdn: string, port: number, apiToken: string, useSSL: boolean = true) {
-    const protocol = useSSL ? 'https' : 'http';
-    this.baseUrl = `${protocol}://${fqdn}:${port}`;
-    this.apiToken = apiToken;
+  constructor(node: Node) {
+    const protocol = node.useSSL ? 'https' : 'http';
+    this.baseUrl = `${protocol}://${node.fqdn}:${node.daemonPort}`;
+    // This token is for PANEL-to-DAEMON communication.
+    // It's the 'token' field in the generated config.yml.
+    this.apiToken = node.token;
   }
 
-  private async request(endpoint: string, options: RequestInit = {}) {
+  private async request(endpoint: string, options: RequestInit = {}, expectJson: boolean = true) {
     const url = `${this.baseUrl}${endpoint}`;
     const headers = {
       'Authorization': `Bearer ${this.apiToken}`,
@@ -33,26 +35,36 @@ export class PterodactylClient {
     };
 
     try {
-      const response = await fetch(url, { ...options, headers });
+      const response = await fetch(url, { ...options, headers, cache: 'no-store' });
       
       if (!response.ok) {
         const errorBody = await response.text();
-        console.error(`Pterodactyl API Error: ${response.status} ${response.statusText}`, errorBody);
+        console.error(`Pterodactyl API Error: ${response.status} ${response.statusText}`, `URL: ${url}`, `Response: ${errorBody}`);
         throw new Error(`API request to node failed with status ${response.status}: ${errorBody || response.statusText}`);
       }
       
+      // Handle successful requests with no content (e.g., 204 No Content)
       if (response.status === 204) {
         return;
       }
       
+      // Handle responses that are not expected to be JSON
+      if (!expectJson) {
+        return response.text();
+      }
+
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         return response.json();
       }
 
-      return response.text();
+      // If we expect JSON but don't get it, it's an issue.
+      const textResponse = await response.text();
+      console.error("Expected JSON response but got text:", textResponse);
+      throw new Error("Received non-JSON response from daemon when one was expected.");
+
     } catch (error: any) {
-      console.error(`Failed to connect to Pterodactyl daemon at ${this.baseUrl}${endpoint}`, error);
+      console.error(`Failed to connect to Pterodactyl daemon at ${url}`, error);
       throw new Error(`Could not connect to the node. Ensure it is online, accessible, and the FQDN and port are correct. Error: ${error.message}`);
     }
   }
@@ -62,8 +74,6 @@ export class PterodactylClient {
    */
   public async isDaemonOnline(): Promise<boolean> {
     try {
-      // The /api/system endpoint should return a successful (2xx) response if the daemon is online.
-      // We don't need to check the body, just the success of the request itself.
       await this.request('/api/system');
       return true;
     } catch (error) {
@@ -78,10 +88,11 @@ export class PterodactylClient {
    * @param signal The power signal to send.
    */
   public async setServerPowerState(serverUuid: string, signal: 'start' | 'stop' | 'restart' | 'kill'): Promise<void> {
+    // This endpoint returns a 204 No Content on success.
     await this.request(`/api/servers/${serverUuid}/power`, {
       method: 'POST',
       body: JSON.stringify({ signal }),
-    });
+    }, false); // Expecting no JSON response
   }
 
   /**
@@ -89,8 +100,7 @@ export class PterodactylClient {
    * @param payload The server configuration details.
    */
   public async createServer(payload: ServerCreationPayload): Promise<any> {
-    // This is a simplified environment for a basic Java server.
-    // A real panel would have more complex logic to select the right environment variables.
+    // This environment is for a basic Java/Minecraft server.
     const environment = {
         'MINECRAFT_VERSION': 'latest',
         'SERVER_JARFILE': 'server.jar',
@@ -105,6 +115,7 @@ export class PterodactylClient {
             name: payload.name,
             docker_image: payload.image,
             startup: `java -Xms128M -Xmx${payload.memory}M -jar {{SERVER_JARFILE}}`,
+            environment: environment,
             limits: {
                 memory: payload.memory,
                 disk: payload.disk,
@@ -112,13 +123,17 @@ export class PterodactylClient {
                 threads: null,
                 io: 500,
             },
-            environment: environment,
+            // The daemon will automatically assign a port from the available range.
             allocations: {
                 default: {
                     ip: '0.0.0.0',
                     ports: []
                 }
             },
+            stop: {
+                type: 'command',
+                value: 'stop'
+            }
         }),
     });
   }
@@ -128,7 +143,8 @@ export class PterodactylClient {
    * @param serverUuid The UUID of the server.
    */
   public async getServerLogs(serverUuid: string): Promise<string> {
-    const response = await this.request(`/api/servers/${serverUuid}/logs`);
+    // Logs are returned as plain text.
+    const response = await this.request(`/api/servers/${serverUuid}/logs`, {}, false);
     return response || '';
   }
 }
