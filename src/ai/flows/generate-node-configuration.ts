@@ -35,11 +35,9 @@ const prompt = ai.definePrompt({
   name: 'generateNodeConfigPrompt',
   input: {schema: GenerateNodeConfigInputSchema},
   output: {schema: GenerateNodeConfigOutputSchema},
-  prompt: `You are a helpful assistant creating a 'config.yml' for a Pterodactyl daemon (wings).
-Generate the YAML configuration using the exact format below. Do not add any extra fields or comments.
+  prompt: `You are an assistant creating a 'config.yml' for a Pterodactyl daemon (wings).
+Generate the YAML configuration using the exact format below. Do not add any extra fields, comments, or markdown backticks.
 
-**Template:**
-\`\`\`yaml
 debug: false
 uuid: {{{uuid}}}
 token_id: {{{tokenId}}}
@@ -58,11 +56,10 @@ system:
     bind_port: 2022
 allowed_mounts: []
 remote: '{{{panelUrl}}}'
-\`\`\`
 
-**Instructions:**
-- Replace the placeholders \`{{{uuid}}}\`, \`{{{tokenId}}}\`, \`{{{token}}}\`, \`{{{fqdn}}}\`, and \`{{{panelUrl}}}\` with the values provided.
-- The output must be only the raw YAML content inside the 'config' field.
+Instructions:
+- Replace the placeholders with the provided values.
+- The output must be ONLY the raw YAML content inside the 'config' field.
 `,
 });
 
@@ -78,7 +75,7 @@ const generateNodeConfigFlow = ai.defineFlow(
       throw new Error('The AI did not return a valid configuration.');
     }
     // Clean up potential markdown formatting from the AI response
-    const cleanedConfig = output.config.replace(/```yaml\n/g, '').replace(/```/g, '');
+    const cleanedConfig = output.config.replace(/```yaml\n/g, '').replace(/```/g, '').trim();
     return { config: cleanedConfig };
   }
 );
