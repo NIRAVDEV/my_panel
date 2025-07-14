@@ -325,7 +325,7 @@ export async function createServer(formData: FormData): Promise<ActionState> {
         await pterodactyl.createServer({
             uuid: serverUuid,
             name: name,
-            image: `ghcr.io/pterodactyl/yolks:java_${version.split('.')[1] || '17'}`, // Default to 17 if split fails
+            image: `ghcr.io/pterodactyl/yolks:java_17`,
             memory: ram * 1024, // Pterodactyl uses MB
             disk: storage * 1024, // Pterodactyl uses MB
         });
@@ -713,29 +713,8 @@ export async function getCurrentUser(): Promise<User | null> {
 
 // Server Log Actions
 export async function getServerLogs(serverId: string): Promise<string[]> {
-    const server = await getServerById(serverId);
-    if (!server) {
-        return ['[ERROR] Server not found or access denied.'];
-    }
-
-    if (server.status === 'Offline') {
-        return [`[INFO] Server is offline. Start the server to view logs.`];
-    }
-    
-    const node = await getNodeById(server.nodeId);
-    if (!node) {
-        return ['[ERROR] Node for this server not found.'];
-    }
-
-    const pterodactyl = new PterodactylClient(node);
-
-    try {
-        const logs = await pterodactyl.getServerLogs(server.uuid);
-        return logs.split('\n');
-    } catch (error: any) {
-        console.error(`Error fetching logs for server ${serverId}:`, error);
-        return [`[ERROR] Could not fetch logs from the node: ${error.message}`];
-    }
+    // This is disabled for now to ensure stability
+    return ["Server console is temporarily disabled."];
 }
 
 // Subuser Actions

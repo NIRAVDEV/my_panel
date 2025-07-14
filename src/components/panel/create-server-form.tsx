@@ -81,7 +81,7 @@ export function CreateServerForm({ nodes, closeDialog }: { nodes: Node[], closeD
                 </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="ram" className="text-right">RAM</Label>
+                <Label htmlFor="ram" className="text-right">RAM (GB)</Label>
                 <Select name="ram" defaultValue="4">
                   <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
                   <SelectContent>

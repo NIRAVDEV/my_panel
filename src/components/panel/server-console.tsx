@@ -20,21 +20,18 @@ export function ServerConsole({ serverId }: { serverId: string }) {
                 console.error("Failed to fetch logs:", error);
                 setLogs(prevLogs => [...prevLogs, "[ERROR] Could not connect to the server to fetch logs."]);
             } finally {
-                if (isLoading) {
-                    setIsLoading(false);
-                }
+                setIsLoading(false);
             }
         };
 
         // Initial fetch
         fetchLogs();
 
-        // Set up interval to fetch logs periodically
+        // Set up interval to fetch logs periodically, but only if the component is mounted
         const interval = setInterval(fetchLogs, 5000);
 
         // Clean up interval on component unmount
         return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [serverId]); // IMPORTANT: Only re-run if the serverId changes.
 
     useEffect(() => {
