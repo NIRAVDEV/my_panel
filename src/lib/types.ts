@@ -29,6 +29,7 @@ export type Node = {
   name: string;
   location: string;
   fqdn: string;
+  daemonPort: number;
   memory: number; // in GB
   disk: number; // in GB
   ports: { start: number; end: number };

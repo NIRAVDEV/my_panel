@@ -88,7 +88,11 @@ export function NodeForm({ node, closeDialog }: { node?: Node, closeDialog: () =
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="fqdn" className="text-right">FQDN</Label>
-                <Input id="fqdn" name="fqdn" className="col-span-3" placeholder="e.g., node.example.com" defaultValue={node?.fqdn} required />
+                <Input id="fqdn" name="fqdn" className="col-span-3" placeholder="e.g., node.example.com or IP" defaultValue={node?.fqdn} required />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="daemonPort" className="text-right">Daemon Port</Label>
+                <Input id="daemonPort" name="daemonPort" type="number" className="col-span-3" placeholder="e.g., 8080" defaultValue={node?.daemonPort || 8080} required />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="memory" className="text-right">Memory (GB)</Label>

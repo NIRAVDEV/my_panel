@@ -121,6 +121,7 @@ const nodeSchema = z.object({
     os: z.enum(["debian", "nixos"]),
     visibility: z.enum(["Public", "Private"]),
     fqdn: z.string().min(1, "FQDN is required"),
+    daemonPort: z.coerce.number().int().positive("Port must be a positive number"),
     memory: z.coerce.number().int().positive("Memory must be a positive number"),
     disk: z.coerce.number().int().positive("Disk must be a positive number"),
     portsStart: z.coerce.number().int().positive(),
@@ -142,7 +143,7 @@ export async function createNode(formData: FormData): Promise<ActionState> {
         };
     }
     
-    const { name, location, fqdn, memory, disk, os, visibility, portsStart, portsEnd } = validatedFields.data;
+    const { name, location, fqdn, daemonPort, memory, disk, os, visibility, portsStart, portsEnd } = validatedFields.data;
 
     try {
         const db = await getDb();
@@ -150,6 +151,7 @@ export async function createNode(formData: FormData): Promise<ActionState> {
             name,
             location,
             fqdn,
+            daemonPort,
             memory,
             disk,
             os,
@@ -180,7 +182,7 @@ export async function updateNode(nodeId: string, formData: FormData): Promise<Ac
         };
     }
 
-    const { name, location, fqdn, memory, disk, os, visibility, portsStart, portsEnd } = validatedFields.data;
+    const { name, location, fqdn, daemonPort, memory, disk, os, visibility, portsStart, portsEnd } = validatedFields.data;
 
     try {
         const db = await getDb();
@@ -191,6 +193,7 @@ export async function updateNode(nodeId: string, formData: FormData): Promise<Ac
                     name,
                     location,
                     fqdn,
+                    daemonPort,
                     memory,
                     disk,
                     os,
@@ -239,7 +242,7 @@ export async function updateNodeStatus(nodeId: string) {
         return { success: false, error: "Node not found." };
     }
 
-    const pterodactyl = new PterodactylClient(node.fqdn, node.token);
+    const pterodactyl = new PterodactylClient(node.fqdn, node.daemonPort, node.token);
     try {
         const isOnline = await pterodactyl.isDaemonOnline();
         const newStatus = isOnline ? 'Online' : 'Offline';
@@ -304,7 +307,7 @@ export async function createServer(formData: FormData): Promise<ActionState> {
             return { success: false, error: "Authentication required." };
         }
 
-        const pterodactyl = new PterodactylClient(node.fqdn, node.token);
+        const pterodactyl = new PterodactylClient(node.fqdn, node.daemonPort, node.token);
         const serverUuid = randomUUID();
 
         // This is the crucial step: provision the server on the node
@@ -430,7 +433,7 @@ export async function updateServerStatus(formData: FormData) {
     revalidatePath("/dashboard/panel");
     revalidatePath(`/dashboard/panel/${serverId}`);
 
-    const pterodactyl = new PterodactylClient(node.fqdn, node.token);
+    const pterodactyl = new PterodactylClient(node.fqdn, node.daemonPort, node.token);
 
     try {
         await pterodactyl.setServerPowerState(server.uuid, action);
@@ -716,7 +719,7 @@ export async function getServerLogs(serverId: string): Promise<string[]> {
         return ['[ERROR] Node for this server not found.'];
     }
 
-    const pterodactyl = new PterodactylClient(node.fqdn, node.token);
+    const pterodactyl = new PterodactylClient(node.fqdn, node.daemonPort, node.token);
 
     try {
         const logs = await pterodactyl.getServerLogs(server.uuid);

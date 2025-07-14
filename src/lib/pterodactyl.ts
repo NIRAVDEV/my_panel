@@ -17,9 +17,8 @@ export class PterodactylClient {
   private readonly baseUrl: string;
   private readonly apiToken: string;
 
-  constructor(fqdn: string, apiToken: string) {
-    // The daemon runs on port 8080 by default.
-    this.baseUrl = `https://${fqdn}:8080`;
+  constructor(fqdn: string, port: number, apiToken: string) {
+    this.baseUrl = `https://${fqdn}:${port}`;
     this.apiToken = apiToken;
   }
 
@@ -53,7 +52,7 @@ export class PterodactylClient {
       return response.text();
     } catch (error: any) {
       console.error(`Failed to connect to Pterodactyl daemon at ${this.baseUrl}${endpoint}`, error);
-      throw new Error(`Could not connect to the node. Ensure it is online, accessible, and the FQDN is correct. Error: ${error.message}`);
+      throw new Error(`Could not connect to the node. Ensure it is online, accessible, and the FQDN and port are correct. Error: ${error.message}`);
     }
   }
 
