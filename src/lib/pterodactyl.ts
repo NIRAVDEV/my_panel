@@ -62,9 +62,12 @@ export class PterodactylClient {
    */
   public async isDaemonOnline(): Promise<boolean> {
     try {
+      // The /api/system endpoint should return a successful (2xx) response if the daemon is online.
+      // We don't need to check the body, just the success of the request itself.
       await this.request('/api/system');
       return true;
-    } catch {
+    } catch (error) {
+      console.error("isDaemonOnline check failed:", error);
       return false;
     }
   }
