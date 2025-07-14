@@ -664,7 +664,7 @@ export async function login(prevState: LoginState, formData: FormData): Promise<
             return { error: "Invalid credentials." };
         }
         
-        cookies().set('session_userId', user._id.toString(), {
+        (await cookies()).set('session_userId', user._id.toString(), {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             maxAge: 60 * 60 * 24 * 7, // One week
@@ -681,13 +681,13 @@ export async function login(prevState: LoginState, formData: FormData): Promise<
 }
 
 export async function logout() {
-    cookies().delete('session_userId');
+    (await cookies()).delete('session_userId');
     revalidatePath('/');
 }
 
 
 export async function getCurrentUser(): Promise<User | null> {
-    const userId = cookies().get('session_userId')?.value;
+    const userId = await (await cookies()).get('session_userId')?.value;
 
     if (!userId) {
         return null;
@@ -821,7 +821,11 @@ export async function removeSubuser(serverId: string, userId: string): Promise<A
         
         await db.collection('servers').updateOne(
             { _id: new ObjectId(serverId) },
-            { $pull: { subusers: { userId: userId } } }
+            {
+                $pull: {
+ subusers: { userId: userId } as any
+                }
+            }
         );
 
         revalidatePath(`/dashboard/panel/${serverId}/subusers`);
