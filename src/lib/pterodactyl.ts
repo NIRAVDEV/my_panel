@@ -1,5 +1,4 @@
 
-
 import type { Node } from './types';
 
 // This is a more robust client inspired by production panel logic.
@@ -25,7 +24,7 @@ export class PterodactylClient {
     this.apiToken = node.token;
   }
 
-  private async request(endpoint: string, options: RequestInit = {}, expectJson: boolean = true) {
+  private async request(endpoint: string, options: RequestInit = {}) {
     const url = `${this.baseUrl}${endpoint}`;
     const headers = {
       'Authorization': `Bearer ${this.apiToken}`,
@@ -48,20 +47,14 @@ export class PterodactylClient {
         return;
       }
       
-      // Handle responses that are not expected to be JSON
-      if (!expectJson) {
-        return response.text();
-      }
-
+      // If we expect JSON, try to parse it.
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         return response.json();
       }
 
-      // If we expect JSON but don't get it, it's an issue.
-      const textResponse = await response.text();
-      console.error("Expected JSON response but got text:", textResponse);
-      throw new Error("Received non-JSON response from daemon when one was expected.");
+      // If it's not JSON, return the text.
+      return response.text();
 
     } catch (error: any) {
       console.error(`Failed to connect to Pterodactyl daemon at ${url}`, error);
@@ -74,6 +67,7 @@ export class PterodactylClient {
    */
   public async isDaemonOnline(): Promise<boolean> {
     try {
+      // The /api/system endpoint is a reliable health check.
       await this.request('/api/system');
       return true;
     } catch (error) {
@@ -92,7 +86,7 @@ export class PterodactylClient {
     await this.request(`/api/servers/${serverUuid}/power`, {
       method: 'POST',
       body: JSON.stringify({ signal }),
-    }, false); // Expecting no JSON response
+    });
   }
 
   /**
@@ -143,10 +137,7 @@ export class PterodactylClient {
    * @param serverUuid The UUID of the server.
    */
   public async getServerLogs(serverUuid: string): Promise<string> {
-    // Logs are returned as plain text.
-    const response = await this.request(`/api/servers/${serverUuid}/logs`, {}, false);
-    return response || '';
+    const response = await this.request(`/api/servers/${serverUuid}/logs`);
+    return typeof response === 'string' ? response : '';
   }
 }
-
-    

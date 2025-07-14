@@ -242,7 +242,7 @@ export async function getNodeById(id: string): Promise<Node | null> {
     }
 }
 
-export async function updateNodeStatus(nodeId: string) {
+export async function updateNodeStatus(nodeId: string, currentStatus: string) {
     const node = await getNodeById(nodeId);
     if (!node) {
         return { success: false, error: "Node not found." };
@@ -253,16 +253,20 @@ export async function updateNodeStatus(nodeId: string) {
         const isOnline = await pterodactyl.isDaemonOnline();
         const newStatus = isOnline ? 'Online' : 'Offline';
 
-        const db = await getDb();
-        await db.collection("nodes").updateOne({ _id: new ObjectId(nodeId) }, { $set: { status: newStatus } });
+        if (newStatus !== currentStatus) {
+            const db = await getDb();
+            await db.collection("nodes").updateOne({ _id: new ObjectId(nodeId) }, { $set: { status: newStatus } });
+            revalidatePath("/dashboard/nodes");
+        }
         
-        revalidatePath("/dashboard/nodes");
         return { success: true, newStatus };
     } catch (error) {
         console.error("Error updating node status:", error);
-        const db = await getDb();
-        await db.collection("nodes").updateOne({ _id: new ObjectId(nodeId) }, { $set: { status: 'Offline' } });
-        revalidatePath("/dashboard/nodes");
+        if (currentStatus !== 'Offline') {
+            const db = await getDb();
+            await db.collection("nodes").updateOne({ _id: new ObjectId(nodeId) }, { $set: { status: 'Offline' } });
+            revalidatePath("/dashboard/nodes");
+        }
         return { success: false, error: "Failed to connect to the node daemon." };
     }
 }
@@ -442,6 +446,10 @@ export async function updateServerStatus(formData: FormData) {
 
     try {
         await pterodactyl.setServerPowerState(server.uuid, action);
+        
+        // After sending the command, we might not get an immediate status update.
+        // It's better to rely on a subsequent status check.
+        // For now, we leave it in "Starting" and let the console/status check update it.
         
         revalidatePath("/dashboard/panel");
         revalidatePath(`/dashboard/panel/${serverId}`);
@@ -814,5 +822,3 @@ export async function removeSubuser(serverId: string, userId: string): Promise<A
         return { success: false, error: "Failed to remove subuser." };
     }
 }
-
-    
