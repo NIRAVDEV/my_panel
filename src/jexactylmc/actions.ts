@@ -224,10 +224,10 @@ export async function getNodes(): Promise<Node[]> {
         // Manually map and convert ObjectId to string to prevent serialization issues
         return nodes.map(node => {
             const { _id, ...rest } = node;
-            return {
+            return JSON.parse(JSON.stringify({
                 ...rest,
                 id: _id.toString(),
-            } as unknown as Node; // Cast to Node after transformation
+            })) as Node; // Cast to Node after transformation
         });
     } catch (error) {
         console.error("Error fetching nodes: ", error);
@@ -267,14 +267,14 @@ export async function updateNodeStatus(nodeId: string, currentStatus: string) {
         }
         
         return { success: true, newStatus };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error updating node status:", error);
         if (currentStatus !== 'Offline') {
             const db = await getDb();
             await db.collection("nodes").updateOne({ _id: new ObjectId(nodeId) }, { $set: { status: 'Offline' } });
             revalidatePath("/dashboard/nodes");
         }
-        return { success: false, error: "Failed to connect to the node daemon." };
+        return { success: false, error: `Failed to connect to the node daemon: ${error.message}` };
     }
 }
 
@@ -606,10 +606,10 @@ export async function getUsers(): Promise<User[]> {
         // Manually map and convert ObjectId to string to prevent serialization issues
         return users.map(user => {
             const { _id, ...rest } = user;
-            return {
+            return JSON.parse(JSON.stringify({
                 ...rest,
                 id: _id.toString(),
-            } as unknown as User;
+            })) as User;
         });
     } catch (error) {
         console.error("Error fetching/ensuring users: ", error);
