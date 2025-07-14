@@ -9,7 +9,7 @@ export class PterodactylClient {
 
   constructor(fqdn: string, apiToken: string) {
     // The daemon runs on port 8080 by default.
-    this.baseUrl = `https://${fqdn}:443`;
+    this.baseUrl = `https://${fqdn}:8080`;
     this.apiToken = apiToken;
   }
 
