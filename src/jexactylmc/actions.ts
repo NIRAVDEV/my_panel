@@ -221,7 +221,14 @@ export async function getNodes(): Promise<Node[]> {
     try {
         const db = await getDb();
         const nodes = await db.collection("nodes").find({}).toArray();
-        return JSON.parse(JSON.stringify(nodes.map(node => ({ ...node, id: node._id.toString() }))));
+        // Manually map and convert ObjectId to string to prevent serialization issues
+        return nodes.map(node => {
+            const { _id, ...rest } = node;
+            return {
+                ...rest,
+                id: _id.toString(),
+            } as unknown as Node; // Cast to Node after transformation
+        });
     } catch (error) {
         console.error("Error fetching nodes: ", error);
         return [];
@@ -596,7 +603,14 @@ export async function getUsers(): Promise<User[]> {
         }
         
         const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
-        return JSON.parse(JSON.stringify(users.map(user => ({ ...user, id: user._id.toString() }))));
+        // Manually map and convert ObjectId to string to prevent serialization issues
+        return users.map(user => {
+            const { _id, ...rest } = user;
+            return {
+                ...rest,
+                id: _id.toString(),
+            } as unknown as User;
+        });
     } catch (error) {
         console.error("Error fetching/ensuring users: ", error);
         return [];
