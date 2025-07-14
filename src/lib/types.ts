@@ -79,3 +79,5 @@ export type Subuser = {
   fallback: string;
   permissions: string[]; // e.g., ["Full Access"] or ["Limited Access"]
 };
+
+    

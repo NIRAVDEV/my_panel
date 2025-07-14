@@ -73,13 +73,10 @@ type NodeConfigState = {
 export async function getAINodeConfig(node: Node, panelUrl: string): Promise<NodeConfigState> {
     let updatedNode = { ...node };
 
-    // Ensure the node has all necessary tokens and IDs for configuration.
-    // This logic runs if a node was created before the token fields were added.
     if (!node.uuid || !node.tokenId || !node.token) {
         const db = await getDb();
         const updates: Partial<Node> = {};
         if (!node.uuid) updates.uuid = randomUUID();
-        // The tokenId and token are used for daemon-to-panel communication.
         if (!node.tokenId) updates.tokenId = randomBytes(8).toString('hex');
         if (!node.token) updates.token = randomBytes(20).toString('hex');
 
@@ -88,15 +85,13 @@ export async function getAINodeConfig(node: Node, panelUrl: string): Promise<Nod
             { $set: updates }
         );
         updatedNode = { ...node, ...updates };
-        // We revalidate here to ensure subsequent calls have the fresh data.
         revalidatePath(`/dashboard/nodes/${node.id}`);
     }
 
     try {
-        // The AI flow is responsible for correctly formatting the config.yml.
         const result = await generateNodeConfig({
              ...updatedNode,
-             panelUrl: panelUrl.replace(/\/$/, '') // Ensure no trailing slash
+             panelUrl: panelUrl.replace(/\/$/, '')
         });
         return { config: result.config };
     } catch (e: any) {
@@ -448,15 +443,6 @@ export async function updateServerStatus(formData: FormData) {
     try {
         await pterodactyl.setServerPowerState(server.uuid, action);
         
-        // This is a fire-and-forget action. The actual status update should
-        // come from a websocket or periodic check, but for now, we optimistically update.
-        // Let's remove the optimistic update to avoid confusion and rely on manual refresh.
-        // A "starting" state is enough feedback for now.
-
-        // A slight delay to allow the daemon to process, then we can re-check status.
-        // For now, we will leave it in "Starting" and the user can refresh.
-        // A more advanced system would poll or use websockets.
-
         revalidatePath("/dashboard/panel");
         revalidatePath(`/dashboard/panel/${serverId}`);
         
@@ -464,7 +450,6 @@ export async function updateServerStatus(formData: FormData) {
     } catch (error: any) {
         console.error(`Error sending command '${action}' to server ${serverId}:`, error);
         
-        // If the command fails, revert the status to Offline.
         await db.collection('servers').updateOne(
             { _id: new ObjectId(serverId) },
             { $set: { status: 'Offline' } }
@@ -713,8 +698,23 @@ export async function getCurrentUser(): Promise<User | null> {
 
 // Server Log Actions
 export async function getServerLogs(serverId: string): Promise<string[]> {
-    // This is disabled for now to ensure stability
-    return ["Server console is temporarily disabled."];
+    const server = await getServerById(serverId);
+    if (!server) {
+        return ["Server not found or access denied."];
+    }
+
+    const node = await getNodeById(server.nodeId);
+    if (!node) {
+        return ["Node for this server not found."];
+    }
+    
+    const pterodactyl = new PterodactylClient(node);
+    try {
+        const logs = await pterodactyl.getServerLogs(server.uuid);
+        return logs.split('\n');
+    } catch (error: any) {
+        return [`Error fetching logs: ${error.message}`];
+    }
 }
 
 // Subuser Actions
@@ -814,3 +814,5 @@ export async function removeSubuser(serverId: string, userId: string): Promise<A
         return { success: false, error: "Failed to remove subuser." };
     }
 }
+
+    

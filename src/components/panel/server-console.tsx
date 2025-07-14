@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getServerLogs } from "@/jexactylmc/actions";
 import { Skeleton } from "../ui/skeleton";
@@ -11,28 +11,31 @@ export function ServerConsole({ serverId }: { serverId: string }) {
     const [isLoading, setIsLoading] = useState(true);
     const consoleEndRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const fetchLogs = async () => {
-            try {
-                const fetchedLogs = await getServerLogs(serverId);
-                setLogs(fetchedLogs);
-            } catch (error) {
-                console.error("Failed to fetch logs:", error);
-                setLogs(prevLogs => [...prevLogs, "[ERROR] Could not connect to the server to fetch logs."]);
-            } finally {
+    const fetchLogs = useCallback(async () => {
+        try {
+            const fetchedLogs = await getServerLogs(serverId);
+            setLogs(fetchedLogs);
+        } catch (error) {
+            console.error("Failed to fetch logs:", error);
+            setLogs(prevLogs => [...prevLogs, "[ERROR] Could not connect to the server to fetch logs."]);
+        } finally {
+            // Only set loading to false on the first fetch
+            if (isLoading) {
                 setIsLoading(false);
             }
-        };
+        }
+    }, [serverId, isLoading]);
 
+    useEffect(() => {
         // Initial fetch
         fetchLogs();
 
-        // Set up interval to fetch logs periodically, but only if the component is mounted
+        // Set up interval to fetch logs periodically
         const interval = setInterval(fetchLogs, 5000);
 
         // Clean up interval on component unmount
         return () => clearInterval(interval);
-    }, [serverId]); // IMPORTANT: Only re-run if the serverId changes.
+    }, [fetchLogs]);
 
     useEffect(() => {
         // Scroll to the bottom of the console when logs update
@@ -68,3 +71,5 @@ export function ServerConsole({ serverId }: { serverId: string }) {
         </Card>
     );
 }
+
+    
