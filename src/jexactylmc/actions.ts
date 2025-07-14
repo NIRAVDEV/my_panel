@@ -435,6 +435,21 @@ export async function updateServerStatus(formData: FormData) {
     try {
         await pterodactyl.setServerPowerState(server.uuid, action);
         
+        // After sending the command, we can assume the final state will be reached.
+        // A more advanced implementation would use websockets to get real-time status updates from Wings.
+        let finalStatus: Server['status'] = 'Offline';
+        if (action === 'start' || action === 'restart') {
+            finalStatus = 'Online';
+        }
+
+        await db.collection('servers').updateOne(
+            { _id: new ObjectId(serverId) },
+            { $set: { status: finalStatus } }
+        );
+
+        revalidatePath("/dashboard/panel");
+        revalidatePath(`/dashboard/panel/${serverId}`);
+        
         return { success: true };
     } catch (error: any) {
         console.error(`Error sending command '${action}' to server ${serverId}:`, error);

@@ -41,16 +41,10 @@ export class PterodactylClient {
         throw new Error(`API request to node failed with status ${response.status}: ${errorBody || response.statusText}`);
       }
       
-      // Successful actions with no content to return
       if (response.status === 204) {
         return;
       }
-
-      // Successful server creation returns data
-      if (response.status === 200 && endpoint === '/api/servers') {
-        return response.json();
-      }
-
+      
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         return response.json();
@@ -92,12 +86,22 @@ export class PterodactylClient {
    * @param payload The server configuration details.
    */
   public async createServer(payload: ServerCreationPayload): Promise<any> {
+    // This is a simplified environment for a basic Java server.
+    // A real panel would have more complex logic to select the right environment variables.
+    const environment = {
+        'MINECRAFT_VERSION': 'latest',
+        'SERVER_JARFILE': 'server.jar',
+        'DL_PATH': '',
+        'BUILD_NUMBER': 'latest'
+    };
+
     return await this.request('/api/servers', {
         method: 'POST',
         body: JSON.stringify({
             uuid: payload.uuid,
             name: payload.name,
             docker_image: payload.image,
+            startup: `java -Xms128M -Xmx${payload.memory}M -jar {{SERVER_JARFILE}}`,
             limits: {
                 memory: payload.memory,
                 disk: payload.disk,
@@ -105,13 +109,13 @@ export class PterodactylClient {
                 threads: null,
                 io: 500,
             },
+            environment: environment,
             allocations: {
                 default: {
                     ip: '0.0.0.0',
-                    ports: [], // Let Wings assign the port
+                    ports: []
                 }
             },
-            environment: {},
         }),
     });
   }
