@@ -1,3 +1,4 @@
+
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { ResourceCharts } from "@/components/dashboard/resource-charts";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";

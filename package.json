@@ -1,3 +1,4 @@
+
 {
   "name": "nextn",
   "version": "0.1.0",
@@ -10,9 +11,6 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
-    "@genkit-ai/core": "^1.14.1",
-    "@genkit-ai/googleai": "^1.14.1",
-    "@google-cloud/functions-framework": "^3.4.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-avatar": "^1.1.0",
@@ -34,16 +32,11 @@
     "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.1",
     "@radix-ui/react-tooltip": "^1.1.2",
-    "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.1.5",
-    "firebase-functions": "^5.0.1",
-    "genkit": "^1.14.1",
-    "google-auth-library": "^9.11.0",
     "lucide-react": "^0.396.0",
-    "mongodb": "^6.8.0",
     "next": "15.3.3",
     "patch-package": "^8.0.0",
     "react": "^18.3.1",
@@ -55,8 +48,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
-    "@types/mongodb": "^4.0.7",
     "@types/node": "^20.14.9",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

@@ -1,5 +1,4 @@
 
-
 import { z } from 'zod';
 
 export type SubuserMeta = {
@@ -43,9 +42,9 @@ export type Node = {
   token: string;
 };
 
-// Represents a user object as stored in the database (password is not included)
+// Represents a user object
 export const UserSchema = z.object({
-  id: z.string(), // Document ID from MongoDB
+  id: z.string(),
   name: z.string(),
   email: z.string().email(),
   role: z.enum(["Admin", "User"]),
@@ -79,5 +78,3 @@ export type Subuser = {
   fallback: string;
   permissions: string[]; // e.g., ["Full Access"] or ["Limited Access"]
 };
-
-    

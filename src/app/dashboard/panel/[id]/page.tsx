@@ -1,5 +1,4 @@
 
-
 import { getServerById } from "@/jexactylmc/actions";
 import { notFound } from "next/navigation";
 import { Cpu, HardDrive, Users } from "lucide-react";
@@ -44,5 +43,3 @@ export default async function ServerOverviewPage({ params }: { params: { id: str
     </>
   );
 }
-
-    

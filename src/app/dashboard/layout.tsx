@@ -40,7 +40,9 @@ export default async function DashboardLayout({
 
     // More robust check to ensure user and its properties exist
     if (!user || !user.name || !user.email) {
-        redirect('/');
+        // In a real app, this would likely redirect to a login page.
+        // For this UI-only version, we'll show a "not found" state.
+        notFound();
     }
 
   return (
