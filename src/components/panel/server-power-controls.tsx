@@ -4,18 +4,22 @@
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, RefreshCw, Square } from "lucide-react";
-import { updateServerStatus } from "@/jexactylmc/actions";
 import type { Server } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 export function ServerPowerControls({ server }: { server: Server }) {
     const [isPending, startTransition] = useTransition();
+    const { toast } = useToast();
 
     const handleAction = (action: "start" | "stop" | "restart") => {
         startTransition(async () => {
-            const formData = new FormData();
-            formData.append('serverId', server.id);
-            formData.append('action', action);
-            await updateServerStatus(formData);
+            // Mock server action
+            console.log(`Action "${action}" on server ${server.id}`);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            toast({
+                title: "Action Sent",
+                description: `The "${action}" command has been sent to the server. (Mock)`,
+            });
         });
     };
 

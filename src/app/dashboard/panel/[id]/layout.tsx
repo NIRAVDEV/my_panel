@@ -1,5 +1,4 @@
 
-import { getServerById } from "@/jexactylmc/actions";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -9,15 +8,16 @@ import type { Server } from "@/lib/types";
 import { ServerNav } from "@/components/panel/server-nav";
 import { Card } from "@/components/ui/card";
 import { ServerPowerControls } from "@/components/panel/server-power-controls";
+import { servers } from "@/lib/server-data";
 
-export default async function ServerManagementLayout({
+export default function ServerManagementLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
   params: { id: string };
 }) {
-  const server = await getServerById(params.id);
+  const server = servers.find(s => s.id === params.id);
 
   if (!server) {
     notFound();

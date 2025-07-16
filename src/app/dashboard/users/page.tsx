@@ -1,17 +1,10 @@
 
 import { UserManagement } from "@/components/users/user-management";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getCurrentUser, getUsers } from "@/jexactylmc/actions";
-import { notFound, redirect } from "next/navigation";
+import { users } from "@/lib/server-data";
 
-export default async function UsersPage() {
-  const user = await getCurrentUser();
-  if (user?.role !== 'Admin') {
-    // In a real app this would redirect. For UI-only, we show notFound.
-    notFound();
-  }
-
-  const initialUsers = await getUsers();
+export default function UsersPage() {
+  const initialUsers = users;
 
   return (
     <div className="max-w-7xl mx-auto">

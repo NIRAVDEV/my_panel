@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { User } from "@/lib/types";
-import { createUser, updateUser } from "@/jexactylmc/actions";
 import { useToast } from "@/hooks/use-toast";
 
 export function UserForm({ user, closeDialog }: { user?: User, closeDialog: () => void }) {
@@ -31,21 +30,14 @@ export function UserForm({ user, closeDialog }: { user?: User, closeDialog: () =
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
         startTransition(async () => {
-            const result = user ? await updateUser(user.id, formData) : await createUser(formData);
-
-            if (result.success) {
-                toast({
-                    title: user ? "User Updated" : "User Created",
-                    description: `The user has been successfully ${user ? 'updated' : 'created'}.`,
-                });
-                closeDialog();
-            } else if (result.error) {
-                toast({
-                    title: "Error",
-                    description: result.error,
-                    variant: "destructive"
-                });
-            }
+            // This is where you would call your backend API
+            console.log("Form submitted", Object.fromEntries(formData));
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            toast({
+                title: user ? "User Updated" : "User Created",
+                description: `The user has been successfully ${user ? 'updated' : 'created'}. (Mock)`,
+            });
+            closeDialog();
         });
     };
 
@@ -94,5 +86,3 @@ export function UserForm({ user, closeDialog }: { user?: User, closeDialog: () =
         </form>
     );
 }
-
-    

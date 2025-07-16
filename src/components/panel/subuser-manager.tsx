@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { Subuser, User } from "@/lib/types";
-import { addSubuser, removeSubuser } from "@/jexactylmc/actions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Badge } from "../ui/badge";
 
@@ -29,24 +28,21 @@ export function SubuserManager({ serverId, initialSubusers, allUsers }: { server
         formData.append("serverId", serverId);
 
         startTransition(async () => {
-            const result = await addSubuser(formData);
-            if (result.success) {
-                toast({ title: "Subuser Added", description: "The user now has access to this server." });
-                setAddDialogOpen(false);
-            } else {
-                toast({ title: "Error", description: result.error, variant: "destructive" });
-            }
+            // Mock add subuser
+            console.log("Adding subuser", Object.fromEntries(formData));
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            toast({ title: "Subuser Added (Mock)", description: "The user now has access to this server." });
+            setAddDialogOpen(false);
         });
     };
     
     const handleRemoveSubuser = (userId: string) => {
         startTransition(async () => {
-            const result = await removeSubuser(serverId, userId);
-            if (result.success) {
-                toast({ title: "Subuser Removed", description: "The user's access has been revoked.", variant: "destructive" });
-            } else {
-                toast({ title: "Error", description: result.error, variant: "destructive" });
-            }
+            // Mock remove subuser
+            console.log(`Removing subuser ${userId} from server ${serverId}`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setSubusers(subusers.filter(s => s.id !== userId));
+            toast({ title: "Subuser Removed (Mock)", description: "The user's access has been revoked.", variant: "destructive" });
         });
     }
 
@@ -73,8 +69,8 @@ export function SubuserManager({ serverId, initialSubusers, allUsers }: { server
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {initialSubusers.length > 0 ? (
-                                initialSubusers.map((subuser) => (
+                            {subusers.length > 0 ? (
+                                subusers.map((subuser) => (
                                     <TableRow key={subuser.id} className={isPending ? "opacity-50" : ""}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">

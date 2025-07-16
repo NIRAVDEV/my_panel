@@ -3,7 +3,6 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { getAIGuide } from "@/jexactylmc/actions";
 import { CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,12 @@ const initialState: GuideState = {
   steps: undefined,
   error: undefined,
 };
+
+async function getAIGuide(prevState: any, formData: FormData): Promise<GuideState> {
+  console.log("getAIGuide called with:", Object.fromEntries(formData.entries()));
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return { steps: ["This is a mocked step 1.", "This is a mocked step 2.", "This is a mocked step 3."] };
+}
 
 function SubmitButton() {
   const { pending } = useFormStatus();

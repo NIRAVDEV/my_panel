@@ -21,7 +21,6 @@ import {
 import { Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { User } from "@/lib/types";
-import { deleteUser } from "@/jexactylmc/actions";
 import { useToast } from "@/hooks/use-toast";
 import { UserForm } from "./user-form";
 
@@ -44,20 +43,15 @@ export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
 
   const handleDelete = (userId: string) => {
     startTransition(async () => {
-      const result = await deleteUser(userId);
-      if (result.success) {
-          toast({
-              title: "User Deleted",
-              description: "The user has been successfully deleted.",
-              variant: "destructive"
-          });
-      } else if (result.error) {
-          toast({
-              title: "Error Deleting User",
-              description: result.error,
-              variant: "destructive"
-          });
-      }
+      // Mock delete
+      console.log(`Deleting user ${userId}`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setUsers(users.filter(u => u.id !== userId));
+      toast({
+          title: "User Deleted",
+          description: "The user has been successfully deleted. (Mock)",
+          variant: "destructive"
+      });
     });
   }
 
@@ -138,5 +132,3 @@ export function UserManagement({ initialUsers }: { initialUsers: User[] }) {
     </CardContent>
   );
 }
-
-    

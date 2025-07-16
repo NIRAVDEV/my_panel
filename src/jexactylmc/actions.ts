@@ -12,9 +12,6 @@ import { users, nodes, servers, subusers } from '@/lib/server-data';
 type ActionState = {
     success: boolean;
     error?: string | null;
-    errors?: {
-        [key:string]: string[] | undefined;
-    }
 }
 
 // AI Actions (Mocked)
@@ -25,11 +22,8 @@ type GuideState = {
 };
 
 export async function getAIGuide(prevState: any, formData: FormData): Promise<GuideState> {
+  console.log("getAIGuide called with:", Object.fromEntries(formData.entries()));
   await new Promise(resolve => setTimeout(resolve, 1000));
-  const task = formData.get("task") as string;
-  if (!task) {
-    return { error: "Please describe the task." };
-  }
   return { steps: ["This is a mocked step 1.", "This is a mocked step 2.", "This is a mocked step 3."] };
 }
 
@@ -40,6 +34,7 @@ type SummaryState = {
 };
 
 export async function summarizeActivity(serverActivityLog: string): Promise<SummaryState> {
+    console.log("summarizeActivity called");
     await new Promise(resolve => setTimeout(resolve, 1000));
     return { summary: "This is a mock summary of server activity.", trends: "These are mock trends." };
 }
@@ -49,6 +44,7 @@ type InstallerGuideState = {
     error?: string;
 }
 export async function getNodeInstallerGuide(nodeId: string, panelUrl: string, os: "debian" | "nixos"): Promise<InstallerGuideState> {
+    console.log("getNodeInstallerGuide called for:", nodeId);
     await new Promise(resolve => setTimeout(resolve, 1000));
     return { guide: `# This is a mock installation guide for ${os}.\n\necho "Installer script for node ${nodeId}..."` };
 }
@@ -58,6 +54,7 @@ type NodeConfigState = {
     error?: string;
 }
 export async function getAINodeConfig(node: Node, panelUrl:string): Promise<NodeConfigState> {
+    console.log("getAINodeConfig called for:", node.name);
     await new Promise(resolve => setTimeout(resolve, 1000));
     return { config: `# Mock config.yml for ${node.name}\n\nuuid: ${node.uuid}` };
 }
@@ -72,6 +69,7 @@ type LoginState = {
 };
 
 export async function login(prevState: LoginState, formData: FormData): Promise<LoginState> {
+    console.log("login called with:", Object.fromEntries(formData.entries()));
     await new Promise(resolve => setTimeout(resolve, 500));
     const email = formData.get('email');
     if (email === 'admin@admin.com') {
@@ -114,10 +112,17 @@ export async function getSubusers(serverId: string): Promise<Subuser[]> {
     return subusers;
 }
 
+export async function getServerLogs(serverId: string): Promise<string[]> {
+    return [
+        "[MOCK] Server starting...",
+        "[MOCK] Loading world...",
+        "[MOCK] Done!"
+    ];
+}
+
 // Data Mutation Actions
 // ===================================
 
-// Nodes
 export async function createNode(formData: FormData): Promise<ActionState> {
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log("createNode called with:", Object.fromEntries(formData.entries()));
@@ -136,13 +141,12 @@ export async function deleteNode(nodeId: string): Promise<ActionState> {
     return { success: true };
 }
 
-export async function updateNodeStatus(nodeId: string, currentStatus: string) {
+export async function updateNodeStatus(nodeId: string) {
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log(`updateNodeStatus called for ${nodeId}`);
-    return { success: true, newStatus: currentStatus === 'Online' ? 'Offline' : 'Online' };
+    return { success: true, newStatus: Math.random() > 0.5 ? 'Online' : 'Offline' };
 }
 
-// Servers
 export async function createServer(formData: FormData): Promise<ActionState> {
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log("createServer called with:", Object.fromEntries(formData.entries()));
@@ -163,7 +167,6 @@ export async function updateServerStatus(formData: FormData) {
     return { success: true };
 }
 
-// Users
 export async function createUser(formData: FormData): Promise<ActionState> {
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log("createUser called with:", Object.fromEntries(formData.entries()));
@@ -182,7 +185,6 @@ export async function deleteUser(userId: string): Promise<ActionState> {
     return { success: true };
 }
 
-// Subusers
 export async function addSubuser(formData: FormData): Promise<ActionState> {
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log(`addSubuser called with:`, Object.fromEntries(formData.entries()));
@@ -193,13 +195,4 @@ export async function removeSubuser(serverId: string, userId: string): Promise<A
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log(`removeSubuser called for server ${serverId}, user ${userId}`);
     return { success: true };
-}
-
-// Server Logs
-export async function getServerLogs(serverId: string): Promise<string[]> {
-    return [
-        "[MOCK] Server starting...",
-        "[MOCK] Loading world...",
-        "[MOCK] Done!"
-    ];
 }

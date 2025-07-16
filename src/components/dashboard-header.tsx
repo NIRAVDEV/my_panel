@@ -16,7 +16,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
-import { logout } from "@/jexactylmc/actions";
 
 export function DashboardHeader() {
   const pathname = usePathname();
@@ -50,7 +49,7 @@ export function DashboardHeader() {
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuItem>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <form action={logout}>
+            <form action="#">
                 <button type="submit" className="w-full text-left">
                     <DropdownMenuItem>Logout</DropdownMenuItem>
                 </button>
@@ -61,5 +60,3 @@ export function DashboardHeader() {
     </header>
   );
 }
-
-    

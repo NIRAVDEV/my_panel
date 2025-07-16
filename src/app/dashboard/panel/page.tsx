@@ -1,10 +1,10 @@
 
 import { ServerList } from "@/components/panel/server-list";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getServers } from "@/jexactylmc/actions";
+import { servers } from "@/lib/server-data";
 
-export default async function PanelPage() {
-  const initialServers = await getServers();
+export default function PanelPage() {
+  const initialServers = servers;
 
   return (
     <div className="max-w-7xl mx-auto">

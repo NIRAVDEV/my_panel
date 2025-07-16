@@ -1,11 +1,11 @@
 
-import { getNodeById } from "@/jexactylmc/actions";
 import { NodeConfiguration } from "@/components/nodes/node-configuration";
 import { notFound } from "next/navigation";
 import { NodeInstaller } from "@/components/nodes/node-installer";
+import { nodes } from "@/lib/server-data";
 
-export default async function NodeConfigurationPage({ params }: { params: { id: string } }) {
-  const node = await getNodeById(params.id);
+export default function NodeConfigurationPage({ params }: { params: { id: string } }) {
+  const node = nodes.find(n => n.id === params.id);
 
   if (!node) {
     notFound();

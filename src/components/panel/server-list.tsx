@@ -22,12 +22,11 @@ import { MoreHorizontal, Play, PlusCircle, RefreshCw, SlidersHorizontal, Square,
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import type { Server, Node } from "@/lib/types";
-import { updateServerStatus, deleteServer, getNodes } from "@/jexactylmc/actions";
 import { CreateServerForm } from "./create-server-form";
+import { nodes } from "@/lib/server-data";
 
 export function ServerList({ initialServers }: { initialServers: Server[] }) {
   const [servers, setServers] = useState<Server[]>(initialServers);
-  const [nodes, setNodes] = useState<Node[]>([]);
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -36,43 +35,46 @@ export function ServerList({ initialServers }: { initialServers: Server[] }) {
     setServers(initialServers);
   }, [initialServers]);
 
-  useEffect(() => {
-    // Fetch nodes when the dialog is about to open.
-    // This could also be done on initial component load.
-    if (open) {
-      getNodes().then(setNodes);
-    }
-  }, [open]);
-
   const handleServerAction = (serverId: string, action: "start" | "stop" | "restart") => {
     startTransition(async () => {
-      const formData = new FormData();
-      formData.append('serverId', serverId);
-      formData.append('action', action);
-      await updateServerStatus(formData);
+      // Mock server action
+      console.log(`Action "${action}" on server ${serverId}`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const server = servers.find(s => s.id === serverId);
+      if (server) {
+        let newStatus: Server['status'] = server.status;
+        if (action === 'start') newStatus = 'Starting';
+        if (action === 'stop') newStatus = 'Offline';
+        if (action === 'restart') newStatus = 'Starting';
+        
+        setServers(servers.map(s => s.id === serverId ? {...s, status: newStatus} : s));
+
+        if (newStatus === 'Starting') {
+            setTimeout(() => {
+                setServers(currentServers => currentServers.map(s => s.id === serverId ? {...s, status: 'Online'} : s));
+            }, 2000);
+        }
+      }
+
       toast({
         title: "Action Sent",
-        description: `The "${action}" command has been sent to the server.`,
+        description: `The "${action}" command has been sent to the server. (Mock)`,
       });
     });
   }
 
   const handleDelete = (serverId: string) => {
     startTransition(async () => {
-      const result = await deleteServer(serverId);
-      if (result.success) {
-        toast({
-            title: "Server Deleted",
-            description: "The server has been successfully deleted.",
-            variant: "destructive"
-        });
-      } else if (result.error) {
-        toast({
-            title: "Error Deleting Server",
-            description: result.error,
-            variant: "destructive"
-        });
-      }
+      // Mock delete
+      console.log(`Deleting server ${serverId}`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setServers(servers.filter(s => s.id !== serverId));
+      toast({
+          title: "Server Deleted",
+          description: "The server has been successfully deleted. (Mock)",
+          variant: "destructive"
+      });
     });
   }
 

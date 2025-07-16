@@ -2,16 +2,13 @@
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { ResourceCharts } from "@/components/dashboard/resource-charts";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
-import { HardDrive, Cpu, Users, Clock, ArrowRight, PlusCircle, Server } from "lucide-react";
+import { HardDrive, Cpu, Users, ArrowRight, PlusCircle, Server } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getServers, getUsers } from "@/jexactylmc/actions";
+import { servers, users } from "@/lib/server-data";
 
-export default async function DashboardPage() {
-  const servers = await getServers();
-  const users = await getUsers();
-
+export default function DashboardPage() {
   const onlineServers = servers.filter(s => s.status === "Online").length;
   const serverStatus = onlineServers > 0 ? "Online" : "Offline";
   const totalPlayers = servers.reduce((acc, server) => acc + server.players.current, 0);

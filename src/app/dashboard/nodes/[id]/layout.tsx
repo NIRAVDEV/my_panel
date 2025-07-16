@@ -3,8 +3,6 @@ import * as React from "react";
 import Link from "next/link";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { notFound } from "next/navigation";
-
-import { getNodeById } from "@/jexactylmc/actions";
 import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
@@ -15,15 +13,16 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { NodeTabs } from "@/components/nodes/node-tabs";
+import { nodes } from "@/lib/server-data";
 
-export default async function NodeDetailsLayout({
+export default function NodeDetailsLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
   params: { id: string };
 }) {
-  const node = await getNodeById(params.id);
+  const node = nodes.find(n => n.id === params.id);
 
   if (!node) {
     notFound();

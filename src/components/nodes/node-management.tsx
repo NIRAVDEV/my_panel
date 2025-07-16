@@ -16,15 +16,10 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
-import { BookOpen, Edit, MoreHorizontal, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
+import { Edit, MoreHorizontal, PlusCircle, RefreshCw, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { updateNodeStatus, deleteNode, getNodeInstallerGuide } from "@/jexactylmc/actions";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import type { Node } from "@/lib/types";
 import { NodeForm } from "./node-form";
@@ -34,10 +29,6 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | undefined>(undefined);
   
-  const [guideDialogOpen, setGuideDialogOpen] = useState(false);
-  const [guideNode, setGuideNode] = useState<Node | null>(null);
-  const [guideContent, setGuideContent] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const { toast } = useToast();
@@ -50,57 +41,32 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
     setSelectedNode(node);
     setDialogOpen(true);
   }
-
-  const handleOpenGuide = async (node: Node) => {
-    setGuideNode(node);
-    setGuideDialogOpen(true);
-    setIsGenerating(true);
-    setGuideContent(null);
-
-    const panelUrl = window.location.origin;
-    const result = await getNodeInstallerGuide(node.id, panelUrl, node.os);
-    if (result.guide) {
-        setGuideContent(result.guide);
-    } else {
-        const errorMsg = result.error || "An unknown error occurred.";
-        setGuideContent(errorMsg);
-        toast({
-            title: "Error",
-            description: errorMsg,
-            variant: "destructive"
-        })
-    }
-    setIsGenerating(false);
-  };
   
   const handleCheckStatus = (node: Node) => {
     startTransition(async () => {
-        const result = await updateNodeStatus(node.id, node.status);
-        if (result.success) {
-            toast({
-                title: `Node is now ${result.newStatus}`,
-                description: `Status for node "${node.name}" has been updated.`,
-            });
-        }
+        // Mock status check
+        console.log(`Checking status for node ${node.id}`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const newStatus = Math.random() > 0.5 ? 'Online' : 'Offline';
+        setNodes(nodes.map(n => n.id === node.id ? {...n, status: newStatus} : n));
+        toast({
+            title: `Node is now ${newStatus}`,
+            description: `Status for node "${node.name}" has been updated. (Mock)`,
+        });
     });
   };
 
   const handleDelete = (nodeId: string) => {
     startTransition(async () => {
-        const result = await deleteNode(nodeId);
-        if (result.success) {
-            toast({
-                title: "Node Deleted",
-                description: "The node has been successfully deleted.",
-                variant: "destructive"
-            });
-        } else if (result.error) {
-            toast({
-                title: "Error Deleting Node",
-                description: result.error,
-                variant: "destructive"
-            });
-        }
+        // Mock delete
+        console.log(`Deleting node ${nodeId}`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setNodes(nodes.filter(n => n.id !== nodeId));
+        toast({
+            title: "Node Deleted",
+            description: "The node has been successfully deleted. (Mock)",
+            variant: "destructive"
+        });
     });
   }
 
@@ -170,10 +136,6 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Check Status
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleOpenGuide(node)}>
-                                <BookOpen className="mr-2 h-4 w-4" />
-                                Installation Guide
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDelete(node.id)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete
@@ -192,34 +154,6 @@ export function NodeManagement({ initialNodes }: { initialNodes: Node[] }) {
           </TableBody>
         </Table>
       </div>
-      
-      <Dialog open={guideDialogOpen} onOpenChange={setGuideDialogOpen}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Installation Guide for {guideNode?.name}</DialogTitle>
-            <DialogDescription>
-              Follow these steps on your new {guideNode?.os === 'nixos' ? 'NixOS' : 'Debian/Ubuntu'} VPS to configure it as a server node.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="rounded-md border p-4 h-[60vh] overflow-y-auto bg-muted">
-            {isGenerating ? (
-              <div className="space-y-4">
-                <Skeleton className="h-4 w-1/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <br/>
-                <Skeleton className="h-4 w-1/3" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            ) : (
-                <pre className="text-sm font-mono whitespace-pre-wrap bg-transparent border-none p-0 text-foreground">
-                    {guideContent}
-                </pre>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </CardContent>
   );
 }

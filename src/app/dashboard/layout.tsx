@@ -27,16 +27,16 @@ import {
   Users,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { getCurrentUser, logout } from "@/jexactylmc/actions";
-import { notFound, redirect } from "next/navigation";
+import { users } from "@/lib/server-data";
+import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-    const user = await getCurrentUser();
+    const user = users.find(u => u.email === 'admin@admin.com');
 
     // More robust check to ensure user and its properties exist
     if (!user || !user.name || !user.email) {
@@ -133,7 +133,7 @@ export default async function DashboardLayout({
                 {user.email}
               </p>
             </div>
-            <form action={logout}>
+            <form action="#">
               <Button type="submit" variant="ghost" size="icon" className="text-sidebar-foreground/70 hover:text-sidebar-foreground">
                   <LogOut className="w-5 h-5" />
                   <span className="sr-only">Log Out</span>

@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { summarizeActivity } from "@/jexactylmc/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Bot, Sparkles } from "lucide-react";
 
@@ -17,6 +16,12 @@ type SummaryState = {
   summary?: string;
   trends?: string;
   error?: string;
+}
+
+async function summarizeActivity(serverActivityLog: string): Promise<SummaryState> {
+    console.log("summarizeActivity called");
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return { summary: "This is a mock summary of server activity.", trends: "These are mock trends." };
 }
 
 export function ActivityFeed() {

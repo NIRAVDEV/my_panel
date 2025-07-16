@@ -1,14 +1,13 @@
 
-import { getServerById } from "@/jexactylmc/actions";
 import { notFound } from "next/navigation";
 import { Cpu, HardDrive, Users } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { Badge } from "@/components/ui/badge";
 import { ServerConsole } from "@/components/panel/server-console";
-import { Card, CardContent } from "@/components/ui/card";
+import { servers } from "@/lib/server-data";
 
-export default async function ServerOverviewPage({ params }: { params: { id: string } }) {
-  const server = await getServerById(params.id);
+export default function ServerOverviewPage({ params }: { params: { id: string } }) {
+  const server = servers.find(s => s.id === params.id);
 
   if (!server) {
     notFound();

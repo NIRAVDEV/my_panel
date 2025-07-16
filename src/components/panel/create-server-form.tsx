@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { createServer } from "@/jexactylmc/actions";
 import type { Node } from "@/lib/types";
 
 export function CreateServerForm({ nodes, closeDialog }: { nodes: Node[], closeDialog: () => void }) {
@@ -31,20 +30,14 @@ export function CreateServerForm({ nodes, closeDialog }: { nodes: Node[], closeD
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
         startTransition(async () => {
-            const result = await createServer(formData);
-            if (result.success) {
-                toast({
-                    title: "Server Created",
-                    description: `Your new server has been created.`,
-                });
-                closeDialog();
-            } else if (result.error) {
-                toast({
-                    title: "Error creating server",
-                    description: result.error,
-                    variant: "destructive"
-                });
-            }
+            // This is where you would call your backend API
+            console.log("Form submitted", Object.fromEntries(formData));
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            toast({
+                title: "Server Created",
+                description: `Your new server has been created. (Mock)`,
+            });
+            closeDialog();
         });
     };
 

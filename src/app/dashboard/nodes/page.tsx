@@ -1,17 +1,10 @@
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NodeManagement } from "@/components/nodes/node-management";
-import { getCurrentUser, getNodes } from "@/jexactylmc/actions";
-import { notFound, redirect } from "next/navigation";
+import { nodes } from "@/lib/server-data";
 
-export default async function NodesPage() {
-  const user = await getCurrentUser();
-  if (user?.role !== 'Admin') {
-    // In a real app this would redirect. For UI-only, we show notFound.
-    notFound();
-  }
-
-  const initialNodes = await getNodes();
+export default function NodesPage() {
+  const initialNodes = nodes;
 
   return (
     <div className="max-w-7xl mx-auto">

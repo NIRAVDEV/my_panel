@@ -13,7 +13,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { createNode, updateNode } from "@/jexactylmc/actions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Node } from "@/lib/types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -27,21 +26,14 @@ export function NodeForm({ node, closeDialog }: { node?: Node, closeDialog: () =
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
         startTransition(async () => {
-            const result = node ? await updateNode(node.id, formData) : await createNode(formData);
-
-            if (result.success) {
-                toast({
-                    title: node ? "Node Updated" : "Node Created",
-                    description: `The node has been successfully ${node ? 'updated' : 'created'}.`,
-                });
-                closeDialog();
-            } else if (result.error) {
-                toast({
-                    title: "Error",
-                    description: result.error,
-                    variant: "destructive"
-                });
-            }
+            // This is where you would call your backend API
+            console.log("Form submitted", Object.fromEntries(formData));
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            toast({
+                title: node ? "Node Updated" : "Node Created",
+                description: `The node has been successfully ${node ? 'updated' : 'created'}. (Mock)`,
+            });
+            closeDialog();
         });
     };
     
